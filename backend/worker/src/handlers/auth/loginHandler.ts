@@ -26,7 +26,15 @@ export async function loginHandler(c: Context<{ Bindings: Env; Variables: { db: 
     });
 
     if (error || !data.user || !data.session) {
-      return c.json({ error: 'Invalid credentials' }, 401);
+      console.error('[Login Error]', {
+        message: error?.message,
+        status: error?.status,
+        code: error?.code,
+        email,
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+      });
+      return c.json({ error: error?.message || 'Invalid credentials' }, 401);
     }
 
     // Fetch user profile
@@ -68,6 +76,7 @@ export async function loginHandler(c: Context<{ Bindings: Env; Variables: { db: 
       projects: [], // TODO: Fetch from project_members
     });
   } catch (error) {
+    console.error('[Login Internal Error]', error);
     return c.json({ error: 'Internal server error' }, 500);
   }
 }

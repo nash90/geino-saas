@@ -28,6 +28,12 @@ export async function registerHandler(c: Context<{ Bindings: Env; Variables: { d
     });
 
     if (authError || !authData.user) {
+      console.error('[Registration Error]', {
+        message: authError?.message,
+        status: authError?.status,
+        code: authError?.code,
+        email,
+      });
       return c.json({ error: authError?.message || 'Registration failed' }, 400);
     }
 
@@ -42,6 +48,7 @@ export async function registerHandler(c: Context<{ Bindings: Env; Variables: { d
         systemRoleCode: null,
       });
     } catch (dbError) {
+      console.error('[Registration DB Error]', dbError);
       // Rollback: delete Supabase auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
       return c.json({ error: 'Failed to create user profile' }, 500);
@@ -51,6 +58,7 @@ export async function registerHandler(c: Context<{ Bindings: Env; Variables: { d
       message: 'Registration successful! Please check your email to verify your account.' 
     });
   } catch (error) {
+    console.error('[Registration Internal Error]', error);
     return c.json({ error: 'Internal server error' }, 500);
   }
 }
