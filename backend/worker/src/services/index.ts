@@ -6,11 +6,6 @@
 
 // Base services
 export { BaseService } from './base/BaseService';
-export type { 
-  ServiceResponse, 
-  PaginationParams, 
-  PaginatedResponse 
-} from './base/BaseService';
 
 // Validation service
 export { ValidationService } from './validation/ValidationService';

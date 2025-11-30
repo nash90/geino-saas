@@ -1,7 +1,7 @@
 import { desc, count } from 'drizzle-orm';
 import { users } from '../../db/schema';
-import { ServiceResponse, PaginatedResponse } from '../base/BaseService';
 import { BaseUserService } from './BaseUserService';
+import type { ServiceResponse, PaginatedResponse } from '../../types';
 import type { User } from '../../types/models';
 
 /**

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { users } from '../../db/schema';
-import { ServiceResponse } from '../base/BaseService';
 import { BaseAuthService } from './BaseAuthService';
+import type { ServiceResponse } from '../../types';
 import type { LoginData, LoginResponse } from '../../types/authTypes';
 
 /**

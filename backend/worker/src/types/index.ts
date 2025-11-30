@@ -5,3 +5,4 @@ export * from './models';
 export * from './userTypes';
 export * from './contextTypes';
 export * from './authTypes';
+export * from './serviceTypes';

@@ -1,5 +1,5 @@
-import { ServiceResponse } from '../base/BaseService';
 import { BaseAuthService } from './BaseAuthService';
+import type { ServiceResponse } from '../../types';
 
 /**
  * Password Service

@@ -1,6 +1,6 @@
 import { users } from '../../db/schema';
-import { ServiceResponse } from '../base/BaseService';
 import { BaseAuthService } from './BaseAuthService';
+import type { ServiceResponse } from '../../types';
 import type { User } from '../../types/models';
 import type { RegistrationData } from '../../types/authTypes';
 
