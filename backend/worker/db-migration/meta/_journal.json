@@ -8,6 +8,13 @@
       "when": 1764483966109,
       "tag": "20251130062606_create_users_table",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1764512757062,
+      "tag": "20251130142556_create_organizations_tables",
+      "breakpoints": true
     }
   ]
 }

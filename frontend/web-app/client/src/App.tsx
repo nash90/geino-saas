@@ -12,6 +12,7 @@ import Invites from "./pages/Invites";
 import TasksProgress from "./pages/TasksProgress";
 import TaskBoard from "./pages/TaskBoard";
 import SystemAdmin from "./pages/SystemAdmin";
+import OrganizationsList from "./pages/admin/OrganizationsList";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -104,6 +105,13 @@ function Router() {
             {() => (
               <DashboardLayout>
                 <SystemAdmin />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/admin/organizations">
+            {() => (
+              <DashboardLayout>
+                <OrganizationsList />
               </DashboardLayout>
             )}
           </Route>
