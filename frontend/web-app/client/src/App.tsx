@@ -11,6 +11,7 @@ import Projects from "./pages/Projects";
 import Invites from "./pages/Invites";
 import TasksProgress from "./pages/TasksProgress";
 import TaskBoard from "./pages/TaskBoard";
+import SystemAdmin from "./pages/SystemAdmin";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -96,6 +97,13 @@ function Router() {
             {() => (
               <DashboardLayout>
                 <TaskBoard />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/system-admin">
+            {() => (
+              <DashboardLayout>
+                <SystemAdmin />
               </DashboardLayout>
             )}
           </Route>

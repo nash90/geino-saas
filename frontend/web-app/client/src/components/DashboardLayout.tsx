@@ -1,4 +1,4 @@
-import { Bell, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, UserPlus } from "lucide-react";
+import { Bell, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, UserPlus } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
@@ -16,12 +16,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const { logout, user } = useAuth();
 
+  // System admin check: systemRoleCode = 1
+  const isSystemAdmin = user?.systemRoleCode === 1;
+
   const menuItems = [
     { path: "/", label: "ホーム", icon: Home },
     { path: "/taskboard", label: "タスクボード", icon: LayoutDashboard },
     { path: "/projects", label: "プロジェクト一覧", icon: FolderKanban },
     { path: "/invites", label: "招待アカウント一覧", icon: UserPlus },
     { path: "/tasks-progress", label: "進捗ありタスク", icon: ListTodo },
+    ...(isSystemAdmin ? [{ path: "/system-admin", label: "システム管理", icon: Settings }] : []),
   ];
 
   return (
