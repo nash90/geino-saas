@@ -1,0 +1,22 @@
+import { Hono } from 'hono';
+import type { Env, AuthUser } from '../middleware/auth';
+import type { DbClient } from '../db/client';
+import { registerHandler } from '../handlers/auth/registerHandler';
+import { loginHandler } from '../handlers/auth/loginHandler';
+import { logoutHandler } from '../handlers/auth/logoutHandler';
+import { refreshHandler } from '../handlers/auth/refreshHandler';
+import { sessionHandler } from '../handlers/auth/sessionHandler';
+import { resetPasswordHandler } from '../handlers/auth/resetPasswordHandler';
+import { updatePasswordHandler } from '../handlers/auth/updatePasswordHandler';
+
+const auth = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
+
+auth.post('/register', registerHandler);
+auth.post('/login', loginHandler);
+auth.post('/logout', logoutHandler);
+auth.post('/refresh', refreshHandler);
+auth.get('/session', sessionHandler);
+auth.post('/reset-password', resetPasswordHandler);
+auth.post('/update-password', updatePasswordHandler);
+
+export default auth;

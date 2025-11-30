@@ -1,0 +1,33 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-11-28",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": {
+		"enabled": true
+	},
+	/**
+	 * Environment Variables (for development)
+	 * For production, use: wrangler secret put <KEY_NAME>
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	 */
+	"vars": {
+		"APP_URL": "http://localhost:3000"
+	}
+	/**
+	 * Secrets (use wrangler secret put for sensitive values):
+	 * - SUPABASE_URL
+	 * - SUPABASE_SERVICE_ROLE_KEY
+	 * - DATABASE_URL (Supabase connection pooler URL in transaction mode)
+	 *
+	 * Example:
+	 * wrangler secret put SUPABASE_URL
+	 * wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+	 * wrangler secret put DATABASE_URL
+	 */
+}
