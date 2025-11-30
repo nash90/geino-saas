@@ -24,7 +24,13 @@ export async function refreshHandler(c: Context<{ Bindings: Env; Variables: { db
     });
 
     if (error || !data.session) {
-      return c.json({ error: 'Failed to refresh token' }, 401);
+      console.error('[Refresh Token Error]', {
+        message: error?.message,
+        status: error?.status,
+        code: error?.code,
+        hasSession: !!data.session,
+      });
+      return c.json({ error: error?.message || 'Failed to refresh token' }, 401);
     }
 
     setCookie(c, 'access_token', data.session.access_token, {
@@ -45,6 +51,7 @@ export async function refreshHandler(c: Context<{ Bindings: Env; Variables: { db
 
     return c.json({ message: 'Token refreshed successfully' });
   } catch (error) {
+    console.error('[Refresh Token - Internal Error]', error);
     return c.json({ error: 'Internal server error' }, 500);
   }
 }

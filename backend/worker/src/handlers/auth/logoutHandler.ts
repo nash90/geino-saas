@@ -21,6 +21,7 @@ export async function logoutHandler(c: Context<{ Bindings: Env; Variables: { db:
 
     return c.json({ message: 'Logged out successfully' });
   } catch (error) {
+    console.error('[Logout Error]', error);
     return c.json({ error: 'Unauthorized' }, 401);
   }
 }

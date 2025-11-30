@@ -62,8 +62,11 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // Refresh failed, redirect to login only if not already on login page
-        if (!window.location.pathname.includes('/login')) {
+        // Refresh failed, redirect to login only if not on a public page
+        const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+        const isPublicPage = publicPaths.some(path => window.location.pathname.includes(path));
+        
+        if (!isPublicPage) {
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);

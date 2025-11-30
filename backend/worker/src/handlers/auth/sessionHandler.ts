@@ -18,6 +18,7 @@ export async function sessionHandler(c: Context<{ Bindings: Env; Variables: { db
       projects: [], // TODO: Fetch from project_members
     });
   } catch (error) {
+    console.error('[Session Error]', error);
     return c.json({ error: 'Unauthorized' }, 401);
   }
 }

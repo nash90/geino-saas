@@ -13,6 +13,8 @@ import TasksProgress from "./pages/TasksProgress";
 import TaskBoard from "./pages/TaskBoard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
@@ -34,30 +36,79 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function Router() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <Switch>
-      {/* Public routes */}
+      {/* Public routes - accessible without authentication */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       
-      {/* Protected routes */}
+      {/* Protected routes - require authentication */}
       {user ? (
-        <DashboardLayout>
-          <Switch>
-            <Route path="/" component={CalendarView} />
-            <Route path="/projects" component={Projects} />
-            <Route path="/invites" component={Invites} />
-            <Route path="/calendar" component={CalendarView} />
-            <Route path="/tasks-progress" component={TasksProgress} />
-            <Route path="/taskboard" component={TaskBoard} />
-            <Route path="/404" component={NotFound} />
-            <Route component={NotFound} />
-          </Switch>
-        </DashboardLayout>
+        <>
+          <Route path="/">
+            {() => (
+              <DashboardLayout>
+                <CalendarView />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/projects">
+            {() => (
+              <DashboardLayout>
+                <Projects />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/invites">
+            {() => (
+              <DashboardLayout>
+                <Invites />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/calendar">
+            {() => (
+              <DashboardLayout>
+                <CalendarView />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/tasks-progress">
+            {() => (
+              <DashboardLayout>
+                <TasksProgress />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/taskboard">
+            {() => (
+              <DashboardLayout>
+                <TaskBoard />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/404" component={NotFound} />
+        </>
       ) : (
-        <Route component={Login} />
+        /* Redirect to login for all other routes when not authenticated */
+        <Route path="/:rest*">
+          {() => {
+            window.location.href = '/login';
+            return null;
+          }}
+        </Route>
       )}
     </Switch>
   );
