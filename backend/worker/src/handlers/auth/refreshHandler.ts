@@ -1,10 +1,8 @@
-import { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { createClient } from '@supabase/supabase-js';
-import type { Env } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import type { BaseContext } from '../../types';
 
-export async function refreshHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient } }>) {
+export async function refreshHandler(c: BaseContext) {
   try {
     const cookieHeader = c.req.header('Cookie');
     const refreshToken = cookieHeader?.match(/refresh_token=([^;]+)/)?.[1];

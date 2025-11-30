@@ -1,8 +1,7 @@
-import { Context } from 'hono';
-import { authenticate, type Env, type AuthUser } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { authenticate } from '../../middleware/auth';
+import type { OptionalAuthContext } from '../../types';
 
-export async function sessionHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>) {
+export async function sessionHandler(c: OptionalAuthContext) {
   try {
     const user = await authenticate(c);
     

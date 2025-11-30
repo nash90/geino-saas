@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { authenticate, requireSystemAdmin, type Env, type AuthUser } from '../middleware/auth';
+import { authenticate, requireSystemAdmin } from '../middleware/auth';
+import type { Env, AuthUser } from '../types';
 import type { DbClient } from '../db/client';
 import { listUsersHandler } from '../handlers/users/listUsersHandler';
 import { getUserHandler } from '../handlers/users/getUserHandler';

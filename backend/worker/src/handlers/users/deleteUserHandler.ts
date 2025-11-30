@@ -1,35 +1,18 @@
-import { Context } from 'hono';
-import { eq } from 'drizzle-orm';
-import { users } from '../../db/schema';
-import { createClient } from '@supabase/supabase-js';
-import type { Env, AuthUser } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { UserDeleteService } from '../../services/users/UserDeleteService';
+import type { OptionalAuthContext } from '../../types';
 
-export async function deleteUserHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>) {
-  try {
-    const id = c.req.param('id');
-    const db = c.get('db');
-    
-    // Delete from custom users table
-    const deleted = await db.delete(users)
-      .where(eq(users.id, id))
-      .returning();
+export async function deleteUserHandler(c: OptionalAuthContext) {
+  const id = c.req.param('id');
+  const db = c.get('db');
+  const userDeleteService = new UserDeleteService(db, c.env);
+  
+  // Call service layer (handles both database and Supabase auth deletion)
+  const result = await userDeleteService.deleteUser(id);
 
-    if (!deleted.length) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    // Delete from Supabase auth
-    const supabase = createClient(
-      c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false } }
-    );
-
-    await supabase.auth.admin.deleteUser(id);
-
-    return c.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    return c.json({ error: 'Failed to delete user' }, 500);
+  if (!result.success) {
+    const statusCode = result.code === 'USER_NOT_FOUND' ? 404 : 500;
+    return c.json({ error: result.error }, statusCode);
   }
+
+  return c.json({ message: 'User deleted successfully' });
 }

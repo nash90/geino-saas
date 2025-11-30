@@ -1,10 +1,9 @@
-import { Context } from 'hono';
 import { deleteCookie } from 'hono/cookie';
 import { createClient } from '@supabase/supabase-js';
-import { authenticate, type Env, type AuthUser } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { authenticate } from '../../middleware/auth';
+import type { OptionalAuthContext } from '../../types';
 
-export async function logoutHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>) {
+export async function logoutHandler(c: OptionalAuthContext) {
   try {
     const user = await authenticate(c);
 
