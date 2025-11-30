@@ -1,8 +1,7 @@
-import { Context } from 'hono';
-import { authenticate, type Env, type AuthUser } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { authenticate } from '../../middleware/auth';
+import type { OptionalAuthContext } from '../../types';
 
-export async function sessionHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>) {
+export async function sessionHandler(c: OptionalAuthContext) {
   try {
     const user = await authenticate(c);
     
@@ -18,6 +17,7 @@ export async function sessionHandler(c: Context<{ Bindings: Env; Variables: { db
       projects: [], // TODO: Fetch from project_members
     });
   } catch (error) {
+    console.error('[Session Error]', error);
     return c.json({ error: 'Unauthorized' }, 401);
   }
 }

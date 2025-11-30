@@ -1,23 +1,7 @@
-import { Context } from 'hono';
 import { createClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema';
-import type { DbClient } from '../db/client';
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  firstname: string;
-  lastname: string;
-  systemRoleCode: number | null;
-}
-
-export interface Env {
-  SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
-  DATABASE_URL: string;
-  APP_URL?: string;
-}
+import type { OptionalAuthContext, AuthUser } from '../types';
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -25,7 +9,7 @@ function getCookieValue(cookieHeader: string | null, name: string): string | nul
   return match ? match[2] : null;
 }
 
-export async function authenticate(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>): Promise<AuthUser> {
+export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
   const cookieHeader = c.req.header('Cookie');
   const token = getCookieValue(cookieHeader || null, 'access_token');
   
@@ -67,7 +51,7 @@ export async function authenticate(c: Context<{ Bindings: Env; Variables: { db: 
 }
 
 export function requireSystemAdmin() {
-  return async (c: Context<{ Bindings: Env; Variables: { user?: AuthUser } }>, next: () => Promise<void>) => {
+  return async (c: OptionalAuthContext, next: () => Promise<void>) => {
     const user = c.get('user');
     
     if (!user || user.systemRoleCode !== 1) {

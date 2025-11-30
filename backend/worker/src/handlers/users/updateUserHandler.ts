@@ -1,33 +1,23 @@
-import { Context } from 'hono';
-import { eq } from 'drizzle-orm';
-import { users } from '../../db/schema';
-import type { Env, AuthUser } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { UserUpdateService } from '../../services/users/UserUpdateService';
+import type { OptionalAuthContext } from '../../types';
 
-export async function updateUserHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>) {
-  try {
-    const id = c.req.param('id');
-    const { systemRoleCode } = await c.req.json();
+export async function updateUserHandler(c: OptionalAuthContext) {
+  const id = c.req.param('id');
+  const { systemRoleCode } = await c.req.json();
+  
+  const db = c.get('db');
+  const userUpdateService = new UserUpdateService(db, c.env);
+  
+  // Call service layer
+  const result = await userUpdateService.updateUserRole(id, systemRoleCode);
 
-    const db = c.get('db');
-    
-    const updatedUser = await db.update(users)
-      .set({ 
-        systemRoleCode,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
-
-    if (!updatedUser.length) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    return c.json({ 
-      message: 'User updated successfully',
-      user: updatedUser[0] 
-    });
-  } catch (error) {
-    return c.json({ error: 'Failed to update user' }, 500);
+  if (!result.success) {
+    const statusCode = result.code === 'USER_NOT_FOUND' ? 404 : 400;
+    return c.json({ error: result.error }, statusCode);
   }
+
+  return c.json({ 
+    message: 'User updated successfully',
+    user: result.data 
+  });
 }

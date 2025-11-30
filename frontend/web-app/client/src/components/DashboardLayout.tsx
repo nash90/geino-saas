@@ -1,18 +1,23 @@
-import { Bell, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, UserPlus } from "lucide-react";
+import { Bell, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, UserPlus } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { MOCK_NOTIFICATIONS } from "@/../../shared/const";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const { logout, user } = useAuth();
+
+  // System admin check: systemRoleCode = 1
+  const isSystemAdmin = user?.systemRoleCode === 1;
 
   const menuItems = [
     { path: "/", label: "ホーム", icon: Home },
@@ -20,6 +25,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/projects", label: "プロジェクト一覧", icon: FolderKanban },
     { path: "/invites", label: "招待アカウント一覧", icon: UserPlus },
     { path: "/tasks-progress", label: "進捗ありタスク", icon: ListTodo },
+    ...(isSystemAdmin ? [{ path: "/system-admin", label: "システム管理", icon: Settings }] : []),
   ];
 
   return (
@@ -73,9 +79,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <Button
             variant="ghost"
             className="w-full text-white hover:bg-white/10 justify-start"
-            onClick={() => alert("ログアウト")}
+            onClick={async () => {
+              await logout();
+              setLocation('/login');
+            }}
           >
-            {!sidebarCollapsed && "ログアウト"}
+            <LogOut className="w-5 h-5" />
+            {!sidebarCollapsed && <span className="ml-3">ログアウト</span>}
           </Button>
         </div>
       </aside>
@@ -100,9 +110,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* User Avatar */}
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-orange-400 flex items-center justify-center text-white font-bold">
-              芸
+              {user?.firstname?.charAt(0) || '芸'}
             </div>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={async () => {
+                await logout();
+                setLocation('/login');
+              }}
+            >
               ログアウト
             </Button>
           </div>

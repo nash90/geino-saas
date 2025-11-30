@@ -1,73 +1,49 @@
-import { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
-import { createClient } from '@supabase/supabase-js';
-import { eq } from 'drizzle-orm';
-import { users } from '../../db/schema';
-import type { Env } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { LoginService } from '../../services/auth/LoginService';
+import type { BaseContext } from '../../types';
 
-export async function loginHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient } }>) {
-  try {
-    const { email, password } = await c.req.json();
+export async function loginHandler(c: BaseContext) {
+  const { email, password } = await c.req.json();
+  
+  const db = c.get('db');
+  const loginService = new LoginService(db, c.env);
+  
+  // Call service layer
+  const result = await loginService.login({ email, password });
 
-    if (!email || !password) {
-      return c.json({ error: 'Missing email or password' }, 400);
-    }
-
-    const supabase = createClient(
-      c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false } }
-    );
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error || !data.user || !data.session) {
-      return c.json({ error: 'Invalid credentials' }, 401);
-    }
-
-    // Fetch user profile
-    const db = c.get('db');
-    const userProfile = await db.query.users.findFirst({
-      where: eq(users.id, data.user.id)
-    });
-
-    if (!userProfile) {
-      return c.json({ error: 'User profile not found' }, 404);
-    }
-
-    // Set httpOnly cookies
-    setCookie(c, 'access_token', data.session.access_token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      maxAge: 3600, // 1 hour
-      path: '/',
-    });
-
-    setCookie(c, 'refresh_token', data.session.refresh_token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      maxAge: 2592000, // 30 days
-      path: '/',
-    });
-
-    return c.json({
-      user: {
-        id: userProfile.id,
-        email: userProfile.email,
-        firstname: userProfile.firstname,
-        lastname: userProfile.lastname,
-        systemRoleCode: userProfile.systemRoleCode,
-      },
-      organizations: [], // TODO: Fetch from organization_members
-      projects: [], // TODO: Fetch from project_members
-    });
-  } catch (error) {
-    return c.json({ error: 'Internal server error' }, 500);
+  if (!result.success) {
+    const statusCode = result.code === 'INVALID_CREDENTIALS' ? 401 : 400;
+    return c.json({ error: result.error }, statusCode);
   }
+
+  const { user, accessToken, refreshToken } = result.data!;
+
+  // Set httpOnly cookies
+  setCookie(c, 'access_token', accessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Lax',
+    maxAge: 3600, // 1 hour
+    path: '/',
+  });
+
+  setCookie(c, 'refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Lax',
+    maxAge: 2592000, // 30 days
+    path: '/',
+  });
+
+  return c.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      systemRoleCode: user.systemRoleCode,
+    },
+    organizations: [], // TODO: Fetch from organization_members
+    projects: [], // TODO: Fetch from project_members
+  });
 }

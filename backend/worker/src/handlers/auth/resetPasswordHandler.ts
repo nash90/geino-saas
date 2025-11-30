@@ -1,33 +1,23 @@
-import { Context } from 'hono';
-import { createClient } from '@supabase/supabase-js';
-import type { Env } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { PasswordService } from '../../services/auth/PasswordService';
+import type { BaseContext } from '../../types';
 
-export async function resetPasswordHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient } }>) {
-  try {
-    const { email } = await c.req.json();
+export async function resetPasswordHandler(c: BaseContext) {
+  const { email } = await c.req.json();
+  
+  const db = c.get('db');
+  const passwordService = new PasswordService(db, c.env);
+  
+  // Get APP_URL from environment or use default
+  const appUrl = c.env.APP_URL || 'http://localhost:3000';
+  
+  // Call service layer
+  const result = await passwordService.resetPassword(email, appUrl);
 
-    if (!email) {
-      return c.json({ error: 'Email is required' }, 400);
-    }
-
-    const supabase = createClient(
-      c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false } }
-    );
-
-    // Get APP_URL from environment or use default
-    const appUrl = c.env.APP_URL || 'http://localhost:3000';
-
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${appUrl}/reset-password`,
-    });
-
-    return c.json({ 
-      message: 'If an account exists with that email, you will receive a password reset link.' 
-    });
-  } catch (error) {
-    return c.json({ error: 'Internal server error' }, 500);
+  if (!result.success) {
+    return c.json({ error: result.error }, 400);
   }
+
+  return c.json({ 
+    message: 'If an account exists with that email, you will receive a password reset link.' 
+  });
 }

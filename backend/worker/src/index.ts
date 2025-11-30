@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { createDbClient } from './db/client';
 import auth from './routes/auth';
 import users from './routes/users';
-import type { Env } from './middleware/auth';
+import type { Env } from './types';
 import type { DbClient } from './db/client';
 
 const app = new Hono<{ Bindings: Env; Variables: { db: DbClient } }>();

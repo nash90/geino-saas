@@ -1,24 +1,18 @@
-import { Context } from 'hono';
-import { eq } from 'drizzle-orm';
-import { users } from '../../db/schema';
-import type { Env, AuthUser } from '../../middleware/auth';
-import type { DbClient } from '../../db/client';
+import { UserQueryService } from '../../services/users/UserQueryService';
+import type { OptionalAuthContext } from '../../types';
 
-export async function getUserHandler(c: Context<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>) {
-  try {
-    const id = c.req.param('id');
-    const db = c.get('db');
-    
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, id)
-    });
+export async function getUserHandler(c: OptionalAuthContext) {
+  const id = c.req.param('id');
+  const db = c.get('db');
+  const userQueryService = new UserQueryService(db, c.env);
+  
+  // Call service layer
+  const result = await userQueryService.getUserById(id);
 
-    if (!user) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    return c.json({ user });
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch user' }, 500);
+  if (!result.success) {
+    const statusCode = result.code === 'USER_NOT_FOUND' ? 404 : 500;
+    return c.json({ error: result.error }, statusCode);
   }
+
+  return c.json({ user: result.data });
 }
