@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { users } from '../../db/schema';
 import { ServiceResponse } from '../base/BaseService';
 import { BaseAuthService } from './BaseAuthService';
-import type { User, TokenRefreshResponse } from '../../types/authTypes';
+import type { User } from '../../types/models';
+import type { TokenRefreshResponse } from '../../types/authTypes';
 
 /**
  * Token Service

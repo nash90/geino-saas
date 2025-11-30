@@ -1,19 +1,13 @@
 /**
- * Authentication Domain Types
+ * Authentication domain types
  */
 
+import type { User, UserWithRole } from './models';
+
 /**
- * User interface
+ * Re-export database models
  */
-export interface User {
-  id: string;
-  email: string;
-  firstname: string;
-  lastname: string;
-  systemRoleCode: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type UserProfile = UserWithRole;
 
 /**
  * Registration data interface

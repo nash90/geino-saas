@@ -1,6 +1,8 @@
 import { BaseService } from '../base/BaseService';
 import { ValidationService } from '../validation/ValidationService';
 import { createClient } from '@supabase/supabase-js';
+import type { DbClient } from '../../db/client';
+import type { Env } from '../../types';
 
 /**
  * Base User Service
@@ -13,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 export abstract class BaseUserService extends BaseService {
   protected validationService: ValidationService;
 
-  constructor(db: any, env: any) {
+  constructor(db: DbClient, env: Env) {
     super(db, env);
     this.validationService = new ValidationService();
   }

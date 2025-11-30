@@ -2,7 +2,7 @@ import { desc, count } from 'drizzle-orm';
 import { users } from '../../db/schema';
 import { ServiceResponse, PaginatedResponse } from '../base/BaseService';
 import { BaseUserService } from './BaseUserService';
-import type { User } from '../../types/authTypes';
+import type { User } from '../../types/models';
 
 /**
  * User Query Service
