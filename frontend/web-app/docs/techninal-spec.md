@@ -26,11 +26,11 @@
 **Tech Stack:**
 - **Frontend:** React 18 + Vite, TypeScript, Tailwind CSS, Radix UI components, @dnd-kit for drag/drop
 - **Backend:** Cloudflare Workers (JS/TS) serving APIs
-- **Auth:** Auth.js (NextAuth.js) for authentication with JWT/Session strategy
-- **DB:** PostgreSQL with Drizzle ORM for typed schemas and queries
+- **Auth:** Backend-only auth using Supabase Auth (via service role key), httpOnly cookies for session management
+- **DB:** Supabase PostgreSQL with Drizzle ORM for typed schemas and queries
 - **Storage:** Cloudflare R2 for file attachments
 - **Queue System:** Cloudflare Queues for async notification delivery (in-app + email)
-- **Email:** SMTP provider (MailChannels, SendGrid, Resend, or AWS SES) for email delivery
+- **Email:** Supabase Auth emails (verification, password reset) + SMTP provider for app notifications
 - **Infra:** pnpm, Vite build, deployment to Cloudflare Workers
 
 **Access Control Matrix:**
@@ -117,36 +117,34 @@ As a new user, I can register an account with email, password, firstname, and la
 2. Frontend displays registration form with fields: email (required), password (required, min 8 chars), confirm password, firstname (required), lastname (required).
 3. User enters values and clicks Register.
 4. Frontend validates inputs locally — email format, password strength, passwords match, firstname and lastname present.
-5. On valid input, frontend calls POST /api/auth/register with { email, password, firstname, lastname }.
-6. Backend validates schema and checks if email already exists.
-7. Backend hashes password using bcrypt and creates a new User row in Postgres with default role = null (no access until System Admin assigns).
-8. Backend emits 'user.registered' event to Cloudflare Queue with { userId, email, verificationToken }.
-9. Backend responds with success message.
-10. Queue consumer worker processes event and sends verification email to user with verification link.
+5. Frontend calls POST /api/auth/register with { email, password, firstname, lastname }.
+6. Backend validates schema and calls Supabase: `supabase.auth.signUp({ email, password, options: { data: { firstname, lastname } } })`.
+7. Supabase creates user in `auth.users` table and sends verification email automatically.
+8. Backend creates user profile in custom `users` table with id from Supabase, system_role_code = NULL (regular user, no admin access).
+9. If users table insert fails, backend rolls back by deleting Supabase auth user via `supabase.auth.admin.deleteUser()`.
+10. Backend responds with success message.
 11. Frontend redirects to login page with success message: "Registration successful! Please check your email to verify your account."
 
 **Data Model (SQL)**
 ```sql
--- Users table
+-- Users table (application profile data)
+-- Note: Authentication data stored in Supabase auth.users (managed by Supabase)
 CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY, -- Links to Supabase auth.users.id (no DEFAULT, set from Supabase)
   email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
   firstname VARCHAR(255) NOT NULL,
   lastname VARCHAR(255) NOT NULL,
-  role_code INT, -- 1: system_admin, 2: organization_manager, 3: project_manager, 4: geino_user, 5: genba_user
-  email_verified BOOLEAN DEFAULT FALSE,
+  system_role_code INT DEFAULT NULL, -- 1: system_admin, NULL: regular user
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role_code ON users(role_code);
+CREATE INDEX idx_users_system_role_code ON users(system_role_code);
 ```
 
 **API Endpoints:**
-- `POST /api/auth/register` - Create new user account
-- `POST /api/auth/verify-email` - Verify email address
+- `POST /api/auth/register` - Create user account (calls Supabase + creates profile in users table)
 
 ---
 
@@ -162,34 +160,27 @@ As a registered user, I can log in with my credentials to access my dashboard ba
 2. Frontend displays login form with fields: email, password.
 3. User enters credentials and clicks Login.
 4. Frontend calls POST /api/auth/login with { email, password }.
-5. Backend validates credentials against hashed password in database.
-6. Backend creates a JWT token or session (using Auth.js) with user id, email, role.
-7. Backend responds with token and user profile { id, email, firstname, lastname, role }.
-8. Frontend stores token in httpOnly cookie or localStorage.
-9. Frontend redirects user to appropriate dashboard based on role:
-   - System Admin → `/admin/organizations`
-   - Organization Manager → `/organizations/:orgId/projects`
-   - Project Manager, Geino User, Genba User → `/projects` (filtered by access)
+5. Backend calls Supabase: `supabase.auth.signInWithPassword({ email, password })`.
+6. Supabase validates credentials and returns JWT tokens (access_token, refresh_token).
+7. Backend fetches user profile from custom users table along with their organization and project memberships.
+8. Backend sets httpOnly cookies with access_token (1 hour expiry) and refresh_token (30 days expiry).
+9. Backend responds with user profile { id, email, firstname, lastname, system_role_code }, organizations array, and projects array.
+10. Frontend stores user profile, organizations, and projects in AuthContext state (not tokens).
+11. Frontend redirects user to appropriate dashboard based on system_role_code and memberships:
+    - System Admin → `/admin/organizations`
+    - Organization Manager → `/organizations/:orgId/projects`
+    - Project Manager, Geino User, Genba User → `/projects` (filtered by access)
 
 **Data Model (SQL)**
 ```sql
--- Sessions table (Auth.js)
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  expires_at TIMESTAMP NOT NULL,
-  session_token VARCHAR(255) UNIQUE NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_token ON sessions(session_token);
+-- No sessions table needed (Supabase manages auth.sessions)
 ```
 
 **API Endpoints:**
-- `POST /api/auth/login` - Authenticate user
-- `POST /api/auth/logout` - Destroy session
-- `GET /api/auth/session` - Get current user session
+- `POST /api/auth/login` - Authenticate user, set httpOnly cookies, return user profile
+- `POST /api/auth/logout` - Clear session cookies and revoke Supabase tokens
+- `POST /api/auth/refresh` - Refresh access token using refresh_token cookie
+- `GET /api/auth/session` - Get current user session from cookie
 
 ---
 
@@ -205,45 +196,27 @@ As a logged-in user, I can reset my password via email and receive a reset link 
 2. Frontend displays form with email field.
 3. User enters email and clicks "Send Reset Link".
 4. Frontend calls POST /api/auth/reset-password with { email }.
-5. Backend validates email exists in database.
-6. Backend generates a secure password reset token with expiration (e.g., 1 hour).
-7. Backend stores reset token in database linked to user.
-8. Backend emits 'password.reset_requested' event to Cloudflare Queue with { email, token, resetLink }.
-9. Backend responds with success message (generic message to prevent email enumeration).
-10. Queue consumer worker processes event and sends password reset email to user with reset link.
-11. Frontend shows success message: "If an account exists with that email, you will receive a password reset link."
-11. User clicks reset link in email and is redirected to `/reset-password?token=XXX`.
-12. Frontend displays new password form.
-13. User enters new password and clicks Reset.
-14. Frontend calls POST /api/auth/reset-password/confirm with { token, newPassword }.
-15. Backend validates token is valid and not expired.
-16. Backend hashes new password and updates user record.
-17. Backend invalidates the reset token.
-18. Backend emits 'password.reset_confirmed' event to Cloudflare Queue with { userId, email }.
-19. Backend responds with success message.
-20. Queue consumer worker processes event and sends confirmation email to user.
-21. Frontend redirects to login page with success message: "Password reset successful! Please log in."
+5. Backend calls Supabase: `supabase.auth.resetPasswordForEmail({ email, redirectTo: '${APP_URL}/reset-password' })`.
+6. Supabase validates email and sends password reset email with secure token automatically.
+7. Backend responds with success message (generic to prevent email enumeration).
+8. Frontend shows success message: "If an account exists with that email, you will receive a password reset link."
+9. User clicks reset link in email and is redirected to `/reset-password?token=XXX`.
+10. Frontend displays new password form.
+11. User enters new password and clicks Reset.
+12. Frontend calls POST /api/auth/update-password with { token, newPassword }.
+13. Backend extracts token from request and calls Supabase: `supabase.auth.updateUser({ password: newPassword })`.
+14. Supabase validates token, updates password, and sends confirmation email automatically.
+15. Backend responds with success message.
+16. Frontend redirects to login page with success message: "Password reset successful! Please log in."
 
 **Data Model (SQL)**
 ```sql
--- Password reset tokens table
-CREATE TABLE password_reset_tokens (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  token VARCHAR(255) UNIQUE NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  used BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
-CREATE INDEX idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
+-- No password_reset_tokens table needed (Supabase manages password reset flow)
 ```
 
 **API Endpoints:**
-- `POST /api/auth/reset-password` - Request password reset (send email)
-- `POST /api/auth/reset-password/confirm` - Confirm password reset with token
+- `POST /api/auth/reset-password` - Request password reset (backend calls Supabase)
+- `POST /api/auth/update-password` - Update password with reset token
 
 ---
 
@@ -261,8 +234,8 @@ As a System Admin, I can create a new organization and assign Organization Manag
 4. System Admin enters values and clicks Create.
 5. Frontend validates inputs and calls POST /api/organizations with { name, description, managerIds }.
 6. Backend verifies requester is System Admin.
-7. Backend creates Organization row and creates organization_members rows for each manager with role_code = 1 (organization_manager).
-8. Backend emits 'organization.member_assigned' event to Cloudflare Queue for each manager with { userId, organizationId, organizationName, roleCode }.
+7. Backend creates Organization row and creates organization_members rows for each manager with organization_role_code = 1 (organization_manager).
+8. Backend emits 'organization.member_assigned' event to Cloudflare Queue for each manager with { userId, organizationId, organizationName, organizationRoleCode }.
 9. Backend responds with created organization.
 10. Queue consumer worker processes events, creates in-app notifications and sends email notifications to each assigned Organization Manager.
 11. Frontend closes modal and refreshes organization list.
@@ -284,7 +257,7 @@ CREATE TABLE organization_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  role_code INT NOT NULL, -- 1: organization_manager
+  organization_role_code INT NOT NULL, -- 1: organization_manager
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(organization_id, user_id)
 );
@@ -314,10 +287,10 @@ As an Organization Manager or above, I can create a project with title, descript
 2. User clicks "新規プロジェクト作成" button.
 3. Frontend opens form with: project name, description, start/end dates, and multi-select for Project Managers, Geino Users, Genba Users.
 4. User enters values and clicks Create.
-5. Frontend validates inputs and calls POST /api/projects with { organizationId, name, description, startDate, endDate, members: [{ userId, roleCode }] }.
+5. Frontend validates inputs and calls POST /api/projects with { organizationId, name, description, startDate, endDate, members: [{ userId, projectRoleCode }] }.
 6. Backend verifies requester is Organization Manager or above for the organization.
 7. Backend creates Project row and project_members rows for each assigned member.
-8. Backend emits 'project.member_assigned' event to Cloudflare Queue for each member with { userId, projectId, projectName, roleCode }.
+8. Backend emits 'project.member_assigned' event to Cloudflare Queue for each member with { userId, projectId, projectName, projectRoleCode }.
 9. Backend responds with created project.
 10. Queue consumer worker processes events, creates in-app notifications and sends email notifications to all assigned members with project details and their role.
 11. Frontend closes dialog and refreshes project list.
@@ -343,7 +316,7 @@ CREATE TABLE project_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  role_code INT NOT NULL, -- 1: project_manager, 2: geino_user, 3: genba_user
+  project_role_code INT NOT NULL, -- 1: project_manager, 2: geino_user, 3: genba_user
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(project_id, user_id)
 );
@@ -694,16 +667,18 @@ CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 ## 4. Dependencies
 
 ### Authentication & Authorization
-- **Auth.js (NextAuth.js)** - Session management with JWT or database sessions
-- **bcrypt** - Password hashing
-- **JWT** - Token-based authentication
-- **Middleware** - Role-based access control (RBAC) checks on all API routes
+- **Supabase Auth** - Backend authentication provider (accessed via service role key only)
+- **@supabase/supabase-js** - Supabase client for backend only (service role key)
+- **httpOnly Cookies** - Secure token storage (access_token, refresh_token)
+- **JWT Verification** - Validate Supabase JWT tokens from cookies in Cloudflare Workers middleware
+- **Token Refresh** - Automatic refresh via refresh_token cookie (50-minute interval on frontend)
+- **Middleware** - Role-based access control (RBAC) checks on all API routes (using system_role_code, organization_role_code, project_role_code for context-based permissions)
 
 ### Database
-- **PostgreSQL** - Primary data store
-- **Drizzle ORM** - Type-safe database queries
-- **pg** - PostgreSQL client
-- **Connection Pool** - For Cloudflare Workers (use Postgres connection pooler like Supabase or Neon)
+- **Supabase PostgreSQL** - Primary data store (includes auth.users managed by Supabase)
+- **Drizzle ORM** - Type-safe database queries and migrations for custom tables
+- **@supabase/supabase-js** - Database client with connection pooling
+- **Postgres Connection Pooler** - Supabase provides built-in pooling for Cloudflare Workers
 
 ### Storage & Files
 - **Cloudflare R2** - Object storage for file attachments
@@ -712,11 +687,8 @@ CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 ### Notifications & Queue System
 - **Cloudflare Queues** - Async event processing for notifications (batched message processing)
 - **Queue Consumer Worker** - Processes notification events: creates in-app notifications + sends emails
-- **SMTP Provider** - MailChannels, SendGrid, Resend, or AWS SES for email delivery
+- **SMTP Provider** - MailChannels, SendGrid, Resend, or AWS SES for application notification emails
 - **Event Types:**
-  - `user.registered` - User registration verification email
-  - `password.reset_requested` - Password reset link email
-  - `password.reset_confirmed` - Password reset confirmation email
   - `organization.member_assigned` - Organization manager assignment (in-app + email)
   - `project.member_assigned` - Project member assignment (in-app + email)
   - `task.assigned` - Task assignment notification (in-app + email)
@@ -725,26 +697,52 @@ CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
 
 ### Access Control Enforcement
 Every API endpoint must verify:
-1. User is authenticated (valid session/token)
+1. User is authenticated (valid Supabase JWT token from httpOnly cookie)
 2. User has required role for the operation:
    ```typescript
-   // Example middleware
-   const requireRole = (allowedRoles: string[]) => {
-     return async (req, res, next) => {
-       const user = req.user; // from auth middleware
-       if (!allowedRoles.includes(user.role)) {
-         return res.status(403).json({ error: 'Forbidden' });
+   // Example middleware for Cloudflare Workers
+   async function authenticate(request: Request, env: Env) {
+     // Extract access_token from httpOnly cookie
+     const cookieHeader = request.headers.get('Cookie');
+     const token = getCookieValue(cookieHeader, 'access_token');
+     if (!token) throw new Error('Unauthorized');
+     
+     // Verify Supabase JWT using service role key
+     const supabase = createClient(
+       env.SUPABASE_URL, 
+       env.SUPABASE_SERVICE_ROLE_KEY,
+       { auth: { persistSession: false } }
+     );
+     const { data: { user }, error } = await supabase.auth.getUser(token);
+     if (error || !user) throw new Error('Unauthorized');
+     
+     // Fetch role from custom users table
+     const appUser = await db.query.users.findFirst({
+       where: eq(users.id, user.id)
+     });
+     if (!appUser) throw new Error('User profile not found');
+     
+     return appUser; // { id, email, firstname, lastname, system_role_code }
+   }
+   
+   const requireSystemRole = (allowedRoleCodes: number[]) => {
+     return (user: any) => {
+       if (!allowedRoleCodes.includes(user.system_role_code)) {
+         throw new Error('Forbidden');
        }
-       next();
      };
    };
    
+   // Helper function
+   function getCookieValue(cookieHeader: string | null, name: string): string | null {
+     if (!cookieHeader) return null;
+     const match = cookieHeader.match(new RegExp(`(^| )${name}=([^;]+)`));
+     return match ? match[2] : null;
+   }
+   
    // Usage
-   app.post('/api/organizations', 
-     authenticate, 
-     requireRole(['system_admin']), 
-     createOrganization
-   );
+   const user = await authenticate(request, env);
+   requireRole([1])(user); // 1 = system_admin
    ```
 
 ---
@@ -753,9 +751,9 @@ Every API endpoint must verify:
 
 ### Phase 1: Foundation (Week 1-2)
 1. ✅ Database schema setup (all tables above)
-2. ✅ Auth.js integration (registration, login, logout)
+2. ✅ Supabase Auth backend integration (registration, login, logout with httpOnly cookies)
 3. ✅ User management (System Admin can assign roles)
-4. ✅ Basic RBAC middleware
+4. ✅ Basic RBAC middleware with cookie-based JWT validation
 
 ### Phase 2: Core Features (Week 3-4)
 1. ✅ Organizations API (CRUD)
@@ -781,12 +779,18 @@ Every API endpoint must verify:
 ## 6. API Summary
 
 ### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/session` - Get current session
-- `POST /api/auth/reset-password` - Request password reset
-- `POST /api/auth/verify-email` - Verify email
+- `POST /api/auth/register` - Register new user (creates Supabase auth user + profile in users table)
+- `POST /api/auth/login` - Login user (authenticate with Supabase, set httpOnly cookies, return user profile)
+- `POST /api/auth/logout` - Logout user (clear cookies, revoke Supabase tokens)
+- `POST /api/auth/refresh` - Refresh access token using refresh_token cookie
+- `POST /api/auth/reset-password` - Request password reset email (calls Supabase)
+- `POST /api/auth/update-password` - Update password with reset token (calls Supabase)
+- `GET /api/auth/session` - Get current user session from httpOnly cookie
+
+**Note:** All authentication flows handled via backend API endpoints. Frontend does not directly interact with Supabase Auth.
+- JWT tokens stored in httpOnly cookies (XSS-safe)
+- Automatic token refresh every 50 minutes (tokens expire in 60 minutes)
+- Email verification handled automatically by Supabase
 
 ### Users (System Admin)
 - `GET /api/users` - List all users
