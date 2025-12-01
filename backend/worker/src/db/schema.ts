@@ -12,6 +12,11 @@ export const users = pgTable('users', {
 }, (table) => [
   index('idx_users_email').on(table.email),
   index('idx_users_system_role_code').on(table.systemRoleCode),
+  // GIN trigram indexes for fast fuzzy search (requires pg_trgm extension)
+  // CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  index('idx_users_firstname_trgm').using('gin', table.firstname.asc().op('gin_trgm_ops')),
+  index('idx_users_lastname_trgm').using('gin', table.lastname.asc().op('gin_trgm_ops')),
+  index('idx_users_email_trgm').using('gin', table.email.asc().op('gin_trgm_ops')),
 ]);
 
 export const organizations = pgTable('organizations', {

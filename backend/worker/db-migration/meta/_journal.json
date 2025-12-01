@@ -15,6 +15,13 @@
       "when": 1764512757062,
       "tag": "20251130142556_create_organizations_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764587573513,
+      "tag": "20251201111253_add_user_search_indexes",
+      "breakpoints": true
     }
   ]
 }
