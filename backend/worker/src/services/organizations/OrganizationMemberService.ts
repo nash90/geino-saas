@@ -128,4 +128,39 @@ export class OrganizationMemberService extends BaseOrganizationService {
       return this.handleError(error, 'Failed to remove organization member');
     }
   }
+
+  /**
+   * Check if user has Organization Manager access to an organization
+   * Returns true if user is System Admin OR Organization Manager of this organization
+   */
+  async hasOrganizationManagerAccess(
+    organizationId: string,
+    userId: string,
+    isSystemAdmin: boolean
+  ): Promise<boolean> {
+    try {
+      // System Admin has access to all organizations
+      if (isSystemAdmin) {
+        return true;
+      }
+
+      // Check if user is an Organization Manager of this organization
+      const [member] = await this.db
+        .select()
+        .from(organizationMembers)
+        .where(
+          and(
+            eq(organizationMembers.organizationId, organizationId),
+            eq(organizationMembers.userId, userId),
+            eq(organizationMembers.organizationRoleCode, 1) // 1 = organization_manager
+          )
+        )
+        .limit(1);
+
+      return !!member;
+    } catch (error) {
+      console.error('Error checking organization manager access:', error);
+      return false;
+    }
+  }
 }

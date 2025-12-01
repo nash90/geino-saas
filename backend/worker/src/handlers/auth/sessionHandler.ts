@@ -1,9 +1,15 @@
 import { authenticate } from '../../middleware/auth';
+import { LoginService } from '../../services/auth/LoginService';
 import type { OptionalAuthContext } from '../../types';
 
 export async function sessionHandler(c: OptionalAuthContext) {
   try {
     const user = await authenticate(c);
+    const db = c.get('db');
+    const loginService = new LoginService(db, c.env);
+    
+    // Fetch user's organizations and projects
+    const { organizations, projects } = await loginService.getUserMemberships(user.id);
     
     return c.json({
       user: {
@@ -13,8 +19,8 @@ export async function sessionHandler(c: OptionalAuthContext) {
         lastname: user.lastname,
         systemRoleCode: user.systemRoleCode,
       },
-      organizations: [], // TODO: Fetch from organization_members
-      projects: [], // TODO: Fetch from project_members
+      organizations,
+      projects,
     });
   } catch (error) {
     console.error('[Session Error]', error);

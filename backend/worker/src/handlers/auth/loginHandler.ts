@@ -35,6 +35,9 @@ export async function loginHandler(c: BaseContext) {
     path: '/',
   });
 
+  // Fetch user's organizations and projects
+  const { organizations, projects } = await loginService.getUserMemberships(user.id);
+
   return c.json({
     user: {
       id: user.id,
@@ -43,7 +46,7 @@ export async function loginHandler(c: BaseContext) {
       lastname: user.lastname,
       systemRoleCode: user.systemRoleCode,
     },
-    organizations: [], // TODO: Fetch from organization_members
-    projects: [], // TODO: Fetch from project_members
+    organizations,
+    projects,
   });
 }
