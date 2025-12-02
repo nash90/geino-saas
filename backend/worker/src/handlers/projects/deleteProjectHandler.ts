@@ -1,10 +1,11 @@
 import { ProjectCommandService } from '../../services/projects/ProjectCommandService';
 import { ProjectQueryService } from '../../services/projects/ProjectQueryService';
-import { isOrganizationManagerOrAbove } from '../../middleware/auth';
-import type { AuthContext, OptionalAuthContext } from '../../types';
+import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import type { AuthContext } from '../../types';
 
 export async function deleteProjectHandler(c: AuthContext) {
   const db = c.get('db');
+  const user = c.get('user');
   const projectCommandService = new ProjectCommandService(db, c.env);
   const projectQueryService = new ProjectQueryService(db, c.env);
 
@@ -22,8 +23,7 @@ export async function deleteProjectHandler(c: AuthContext) {
   const project = projectResult.data!;
 
   // Check if user has permission (System Admin or Organization Manager)
-  // @ts-ignore - AuthContext to OptionalAuthContext type mismatch, but user is guaranteed by auth middleware
-  const hasAccess = await isOrganizationManagerOrAbove(c, project.organizationId);
+  const hasAccess = await AuthorizationService.isOrganizationManagerOrAbove(db, user, project.organizationId);
 
   if (!hasAccess) {
     return c.json({ error: 'Forbidden: Only Organization Managers can delete projects' }, 403);

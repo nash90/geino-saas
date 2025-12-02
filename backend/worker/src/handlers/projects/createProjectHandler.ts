@@ -1,6 +1,6 @@
 import { ProjectCommandService } from '../../services/projects/ProjectCommandService';
-import { isOrganizationManagerOrAbove } from '../../middleware/auth';
-import type { AuthContext, OptionalAuthContext } from '../../types';
+import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import type { AuthContext } from '../../types';
 
 export async function createProjectHandler(c: AuthContext) {
   const db = c.get('db');
@@ -12,8 +12,7 @@ export async function createProjectHandler(c: AuthContext) {
   const { organizationId, name, description, startDate, endDate, members } = body;
 
   // Check if user has permission (System Admin or Organization Manager)
-  // @ts-ignore - AuthContext to OptionalAuthContext type mismatch, but user is guaranteed by auth middleware
-  const hasAccess = await isOrganizationManagerOrAbove(c, body.organizationId);
+  const hasAccess = await AuthorizationService.isOrganizationManagerOrAbove(db, user, body.organizationId);
 
   if (!hasAccess) {
     return c.json({ error: 'Forbidden: You do not have permission to create projects in this organization' }, 403);

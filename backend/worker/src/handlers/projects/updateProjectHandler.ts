@@ -1,10 +1,11 @@
 import { ProjectCommandService } from '../../services/projects/ProjectCommandService';
 import { ProjectQueryService } from '../../services/projects/ProjectQueryService';
-import { isProjectManagerOrAbove } from '../../middleware/auth';
-import type { AuthContext, OptionalAuthContext } from '../../types';
+import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import type { AuthContext } from '../../types';
 
 export async function updateProjectHandler(c: AuthContext) {
   const db = c.get('db');
+  const user = c.get('user');
   const projectCommandService = new ProjectCommandService(db, c.env);
   const projectQueryService = new ProjectQueryService(db, c.env);
 
@@ -12,8 +13,7 @@ export async function updateProjectHandler(c: AuthContext) {
   const projectId = c.req.param('id');
 
   // Check if user has permission (System Admin, Org Manager, or Project Manager)
-  // @ts-ignore - AuthContext to OptionalAuthContext type mismatch, but user is guaranteed by auth middleware
-  const hasAccess = await isProjectManagerOrAbove(c, projectId);
+  const hasAccess = await AuthorizationService.isProjectManagerOrAbove(db, user, projectId);
 
   if (!hasAccess) {
     return c.json({ error: 'Forbidden: You do not have permission to update this project' }, 403);

@@ -65,23 +65,4 @@ export interface OrganizationMemberData {
 // ============================================================================
 // Constants
 // ============================================================================
-
-/**
- * Organization role codes with metadata
- */
-export const ORGANIZATION_ROLES = [
-  { key: 'ORGANIZATION_MANAGER', value: 1, label: 'Organization Manager' },
-] as const;
-
-/**
- * Helper to get all valid organization role codes
- */
-export const VALID_ORGANIZATION_ROLE_CODES: number[] = ORGANIZATION_ROLES.map(role => role.value);
-
-/**
- * Helper to get organization role label by code
- */
-export function getOrganizationRoleLabel(roleCode: number): string {
-  const role = ORGANIZATION_ROLES.find(r => r.value === roleCode);
-  return role?.label || 'Unknown Role';
-}
+// NOTE: Organization role codes are now defined in codeTypes.ts

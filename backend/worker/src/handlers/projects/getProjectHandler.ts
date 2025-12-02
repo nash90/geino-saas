@@ -1,6 +1,6 @@
 import { ProjectQueryService } from '../../services/projects/ProjectQueryService';
-import { isProjectManagerOrAbove } from '../../middleware/auth';
-import type { AuthContext, OptionalAuthContext } from '../../types';
+import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import type { AuthContext } from '../../types';
 
 export async function getProjectHandler(c: AuthContext) {
   const db = c.get('db');
@@ -22,12 +22,11 @@ export async function getProjectHandler(c: AuthContext) {
   const project = result.data!;
 
   // Check if user has access to view this project
-  const isSystemAdmin = user?.systemRoleCode === 1;
+  const isSystemAdmin = user.systemRoleCode === 1;
   
   if (!isSystemAdmin) {
     // Check if user is org manager or project member
-    // @ts-ignore - AuthContext to OptionalAuthContext type mismatch, but user is guaranteed by auth middleware
-    const hasAccess = await isProjectManagerOrAbove(c, projectId);
+    const hasAccess = await AuthorizationService.isProjectManagerOrAbove(db, user, projectId);
     
     // Also check if user is any kind of project member (not just manager)
     if (!hasAccess) {

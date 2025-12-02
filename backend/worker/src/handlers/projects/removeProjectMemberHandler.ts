@@ -1,9 +1,10 @@
 import { ProjectCommandService } from '../../services/projects/ProjectCommandService';
-import { isProjectManagerOrAbove } from '../../middleware/auth';
-import type { AuthContext, OptionalAuthContext } from '../../types';
+import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import type { AuthContext } from '../../types';
 
 export async function removeProjectMemberHandler(c: AuthContext) {
   const db = c.get('db');
+  const user = c.get('user');
   const projectCommandService = new ProjectCommandService(db, c.env);
 
   // Get project ID and user ID from URL params
@@ -11,8 +12,7 @@ export async function removeProjectMemberHandler(c: AuthContext) {
   const userId = c.req.param('userId');
 
   // Check if user has permission (System Admin, Org Manager, or Project Manager)
-  // @ts-ignore - AuthContext to OptionalAuthContext type mismatch, but user is guaranteed by auth middleware
-  const hasAccess = await isProjectManagerOrAbove(c, projectId);
+  const hasAccess = await AuthorizationService.isProjectManagerOrAbove(db, user, projectId);
 
   if (!hasAccess) {
     return c.json({ error: 'Forbidden: You do not have permission to manage this project' }, 403);
