@@ -55,7 +55,7 @@ export function requireSystemAdmin() {
   return async (c: OptionalAuthContext, next: () => Promise<void>) => {
     const user = c.get('user');
     
-    if (!user || user.systemRoleCode !== SystemRole.SYSTEM_ADMIN) {
+    if (!user || user.systemRoleCode !== SystemRole.SYSTEM_ADMIN.code) {
       return c.json({ error: 'Forbidden: System Admin access required' }, 403);
     }
     

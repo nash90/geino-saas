@@ -19,14 +19,14 @@ export class AuthorizationService {
     organizationId: string
   ): Promise<boolean> {
     // System Admin has access to everything
-    if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN) return true;
+    if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) return true;
 
     // Check if user is Organization Manager of this organization
     const member = await db.query.organizationMembers.findFirst({
       where: and(
         eq(organizationMembers.organizationId, organizationId),
         eq(organizationMembers.userId, user.id),
-        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER)
+        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
       )
     });
 
@@ -43,7 +43,7 @@ export class AuthorizationService {
     projectId: string
   ): Promise<boolean> {
     // System Admin has access to everything
-    if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN) return true;
+    if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) return true;
 
     // Get project to find its organization
     const project = await db.query.projects.findFirst({
@@ -57,7 +57,7 @@ export class AuthorizationService {
       where: and(
         eq(organizationMembers.organizationId, project.organizationId),
         eq(organizationMembers.userId, user.id),
-        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER)
+        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
       )
     });
 
@@ -68,7 +68,7 @@ export class AuthorizationService {
       where: and(
         eq(projectMembers.projectId, projectId),
         eq(projectMembers.userId, user.id),
-        eq(projectMembers.projectRoleCode, ProjectRole.PROJECT_MANAGER)
+        eq(projectMembers.projectRoleCode, ProjectRole.PROJECT_MANAGER.code)
       )
     });
 

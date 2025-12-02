@@ -153,7 +153,7 @@ export class OrganizationMemberService extends BaseOrganizationService {
           and(
             eq(organizationMembers.organizationId, organizationId),
             eq(organizationMembers.userId, userId),
-            eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER)
+            eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
           )
         )
         .limit(1);

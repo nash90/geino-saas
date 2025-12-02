@@ -9,25 +9,16 @@
 // System Role Codes
 // ============================================================================
 
-/**
- * System role codes with metadata
- */
-export const SYSTEM_ROLES = [
-  { key: 'SYSTEM_ADMIN', value: 1, label: 'System Admin' },
-  { key: 'REGULAR_USER', value: 2, label: 'Regular User' },
-] as const;
+export const SystemRole = {
+  SYSTEM_ADMIN: { code: 1, label: 'System Admin', key: 'system_admin' },
+  REGULAR_USER: { code: 2, label: 'Regular User', key: 'regular_user' }
+} as const;
 
-/**
- * Helper to get all valid system role codes
- */
-export const VALID_SYSTEM_ROLE_CODES: number[] = SYSTEM_ROLES.map(role => role.value);
+export const VALID_SYSTEM_ROLE_CODES: number[] = Object.values(SystemRole).map(role => role.code);
 
-/**
- * Helper to get system role label by code
- */
 export function getSystemRoleLabel(roleCode: number | null): string {
   if (roleCode === null) return 'No System Role';
-  const role = SYSTEM_ROLES.find(r => r.value === roleCode);
+  const role = Object.values(SystemRole).find(r => r.code === roleCode);
   return role?.label || 'Unknown Role';
 }
 
@@ -35,24 +26,15 @@ export function getSystemRoleLabel(roleCode: number | null): string {
 // Organization Role Codes
 // ============================================================================
 
-/**
- * Organization role codes with metadata
- */
-export const ORGANIZATION_ROLES = [
-  { key: 'ORGANIZATION_MANAGER', value: 1, label: 'Organization Manager' },
-  { key: 'ORGANIZATION_MEMBER', value: 2, label: 'Organization Member' },
-] as const;
+export const OrganizationRole = {
+  ORGANIZATION_MANAGER: { code: 1, label: 'Organization Manager', key: 'organization_manager' },
+  ORGANIZATION_MEMBER: { code: 2, label: 'Organization Member', key: 'organization_member' }
+} as const;
 
-/**
- * Helper to get all valid organization role codes
- */
-export const VALID_ORGANIZATION_ROLE_CODES: number[] = ORGANIZATION_ROLES.map(role => role.value);
+export const VALID_ORGANIZATION_ROLE_CODES: number[] = Object.values(OrganizationRole).map(role => role.code);
 
-/**
- * Helper to get organization role label by code
- */
 export function getOrganizationRoleLabel(roleCode: number): string {
-  const role = ORGANIZATION_ROLES.find(r => r.value === roleCode);
+  const role = Object.values(OrganizationRole).find(r => r.code === roleCode);
   return role?.label || 'Unknown Role';
 }
 
@@ -60,25 +42,16 @@ export function getOrganizationRoleLabel(roleCode: number): string {
 // Project Role Codes
 // ============================================================================
 
-/**
- * Project role codes with metadata
- */
-export const PROJECT_ROLES = [
-  { key: 'PROJECT_MANAGER', value: 1, label: 'Project Manager' },
-  { key: 'GEINO_USER', value: 2, label: 'Geino User' },
-  { key: 'GENBA_USER', value: 3, label: 'Genba User' },
-] as const;
+export const ProjectRole = {
+  PROJECT_MANAGER: { code: 1, label: 'Project Manager', key: 'project_manager' },
+  GEINO_USER: { code: 2, label: 'Geino User', key: 'geino_user' },
+  GENBA_USER: { code: 3, label: 'Genba User', key: 'genba_user' }
+} as const;
 
-/**
- * Helper to get all valid project role codes
- */
-export const VALID_PROJECT_ROLE_CODES: number[] = PROJECT_ROLES.map(role => role.value);
+export const VALID_PROJECT_ROLE_CODES: number[] = Object.values(ProjectRole).map(role => role.code);
 
-/**
- * Helper to get project role label by code
- */
 export function getProjectRoleLabel(roleCode: number): string {
-  const role = PROJECT_ROLES.find(r => r.value === roleCode);
+  const role = Object.values(ProjectRole).find(r => r.code === roleCode);
   return role?.label || 'Unknown Role';
 }
 
@@ -86,25 +59,16 @@ export function getProjectRoleLabel(roleCode: number): string {
 // Project Status Codes
 // ============================================================================
 
-/**
- * Project status codes with metadata
- */
-export const PROJECT_STATUSES = [
-  { key: 'ACTIVE', value: 1, label: 'Active' },
-  { key: 'COMPLETED', value: 2, label: 'Completed' },
-  { key: 'ARCHIVED', value: 3, label: 'Archived' },
-] as const;
+export const ProjectStatus = {
+  ACTIVE: { code: 1, label: 'Active', key: 'active' },
+  COMPLETED: { code: 2, label: 'Completed', key: 'completed' },
+  ARCHIVED: { code: 3, label: 'Archived', key: 'archived' }
+} as const;
 
-/**
- * Helper to get all valid project status codes
- */
-export const VALID_PROJECT_STATUS_CODES: number[] = PROJECT_STATUSES.map(status => status.value);
+export const VALID_PROJECT_STATUS_CODES: number[] = Object.values(ProjectStatus).map(status => status.code);
 
-/**
- * Helper to get project status label by code
- */
 export function getProjectStatusLabel(statusCode: number): string {
-  const status = PROJECT_STATUSES.find(s => s.value === statusCode);
+  const status = Object.values(ProjectStatus).find(s => s.code === statusCode);
   return status?.label || 'Unknown Status';
 }
 
@@ -112,33 +76,7 @@ export function getProjectStatusLabel(statusCode: number): string {
 // Type Exports for Type Safety
 // ============================================================================
 
-export type SystemRoleCode = typeof SYSTEM_ROLES[number]['value'];
-export type OrganizationRoleCode = typeof ORGANIZATION_ROLES[number]['value'];
-export type ProjectRoleCode = typeof PROJECT_ROLES[number]['value'];
-export type ProjectStatusCode = typeof PROJECT_STATUSES[number]['value'];
-
-// ============================================================================
-// Constant Value Exports (for backward compatibility and convenience)
-// ============================================================================
-
-export const SystemRole = {
-  SYSTEM_ADMIN: SYSTEM_ROLES[0].value,
-  REGULAR_USER: SYSTEM_ROLES[1].value,
-} as const;
-
-export const OrganizationRole = {
-  ORGANIZATION_MANAGER: ORGANIZATION_ROLES[0].value,
-  ORGANIZATION_MEMBER: ORGANIZATION_ROLES[1].value,
-} as const;
-
-export const ProjectRole = {
-  PROJECT_MANAGER: PROJECT_ROLES[0].value,
-  GEINO_USER: PROJECT_ROLES[1].value,
-  GENBA_USER: PROJECT_ROLES[2].value,
-} as const;
-
-export const ProjectStatus = {
-  ACTIVE: PROJECT_STATUSES[0].value,
-  COMPLETED: PROJECT_STATUSES[1].value,
-  ARCHIVED: PROJECT_STATUSES[2].value,
-} as const;
+export type SystemRoleCode = typeof SystemRole[keyof typeof SystemRole]['code'];
+export type OrganizationRoleCode = typeof OrganizationRole[keyof typeof OrganizationRole]['code'];
+export type ProjectRoleCode = typeof ProjectRole[keyof typeof ProjectRole]['code'];
+export type ProjectStatusCode = typeof ProjectStatus[keyof typeof ProjectStatus]['code'];
