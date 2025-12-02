@@ -4,6 +4,7 @@ import { createDbClient } from './db/client';
 import auth from './routes/auth';
 import users from './routes/users';
 import organizations from './routes/organizations';
+import projects from './routes/projects';
 import type { Env } from './types';
 import type { DbClient } from './db/client';
 
@@ -43,5 +44,6 @@ app.get('/', (c) => {
 app.route('/api/auth', auth);
 app.route('/api/users', users);
 app.route('/api/organizations', organizations);
+app.route('/api/projects', projects);
 
 export default app;

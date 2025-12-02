@@ -22,6 +22,13 @@
       "when": 1764587573513,
       "tag": "20251201111253_add_user_search_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1764674007688,
+      "tag": "20251202111327_add_projects_tables",
+      "breakpoints": true
     }
   ]
 }

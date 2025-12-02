@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema';
-import type { OptionalAuthContext, AuthUser } from '../types';
+import type { OptionalAuthContext, AuthContext, AuthUser } from '../types';
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -60,4 +60,98 @@ export function requireSystemAdmin() {
     
     await next();
   };
+}
+
+/**
+ * Check if user is Organization Manager or above (System Admin or Org Manager of the organization)
+ * Used for operations that require organization-level permissions
+ */
+export async function isOrganizationManagerOrAbove(
+  c: OptionalAuthContext,
+  organizationId: string
+): Promise<boolean>;
+export async function isOrganizationManagerOrAbove(
+  c: AuthContext,
+  organizationId: string
+): Promise<boolean>;
+export async function isOrganizationManagerOrAbove(
+  c: any,
+  organizationId: string
+): Promise<boolean> {
+  const user = c.get('user');
+  if (!user) return false;
+
+  // System Admin has access to everything
+  if (user.systemRoleCode === 1) return true;
+
+  // Check if user is Organization Manager of this organization
+  const db = c.get('db');
+  const { organizationMembers } = await import('../db/schema');
+  const { eq, and } = await import('drizzle-orm');
+
+  const member = await db.query.organizationMembers.findFirst({
+    where: and(
+      eq(organizationMembers.organizationId, organizationId),
+      eq(organizationMembers.userId, user.id),
+      eq(organizationMembers.organizationRoleCode, 1) // 1 = organization_manager
+    )
+  });
+
+  return !!member;
+}
+
+/**
+ * Check if user is Project Manager or above for a specific project
+ * Includes: System Admin, Organization Manager of the org, or Project Manager of the project
+ */
+export async function isProjectManagerOrAbove(
+  c: OptionalAuthContext,
+  projectId: string
+): Promise<boolean>;
+export async function isProjectManagerOrAbove(
+  c: AuthContext,
+  projectId: string
+): Promise<boolean>;
+export async function isProjectManagerOrAbove(
+  c: any,
+  projectId: string
+): Promise<boolean> {
+  const user = c.get('user');
+  if (!user) return false;
+
+  // System Admin has access to everything
+  if (user.systemRoleCode === 1) return true;
+
+  const db = c.get('db');
+  const { projects, projectMembers, organizationMembers } = await import('../db/schema');
+  const { eq, and } = await import('drizzle-orm');
+
+  // Get project to find its organization
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, projectId)
+  });
+
+  if (!project) return false;
+
+  // Check if user is Organization Manager of the project's organization
+  const orgMember = await db.query.organizationMembers.findFirst({
+    where: and(
+      eq(organizationMembers.organizationId, project.organizationId),
+      eq(organizationMembers.userId, user.id),
+      eq(organizationMembers.organizationRoleCode, 1) // 1 = organization_manager
+    )
+  });
+
+  if (orgMember) return true;
+
+  // Check if user is Project Manager of this project
+  const projectMember = await db.query.projectMembers.findFirst({
+    where: and(
+      eq(projectMembers.projectId, projectId),
+      eq(projectMembers.userId, user.id),
+      eq(projectMembers.projectRoleCode, 1) // 1 = project_manager
+    )
+  });
+
+  return !!projectMember;
 }
