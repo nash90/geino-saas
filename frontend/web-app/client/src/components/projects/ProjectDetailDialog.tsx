@@ -10,6 +10,7 @@ interface ProjectDetailDialogProps {
   project: ProjectWithMembers | null;
   isProjectManagerOrAbove: (projectId: string) => boolean;
   onAddMember: () => void;
+  onRemoveMember: (userId: string) => void;
   getStatusLabel: (statusCode: number) => string;
 }
 
@@ -19,6 +20,7 @@ export function ProjectDetailDialog({
   project,
   isProjectManagerOrAbove,
   onAddMember,
+  onRemoveMember,
   getStatusLabel,
 }: ProjectDetailDialogProps) {
   if (!project) return null;
@@ -87,6 +89,19 @@ export function ProjectDetailDialog({
                       {member.projectRoleCode === 1 ? 'PM' : 
                        member.projectRoleCode === 2 ? 'Geino' : 'Genba'}
                     </div>
+                    {isProjectManagerOrAbove(project.id) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveMember(member.userId);
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

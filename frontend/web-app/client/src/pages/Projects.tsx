@@ -68,6 +68,27 @@ export default function Projects() {
     loadProjects();
   };
 
+  const handleRemoveMember = async (userId: string) => {
+    if (!selectedProject) return;
+
+    if (!confirm('このメンバーをプロジェクトから削除しますか？')) {
+      return;
+    }
+
+    try {
+      await projectsApi.removeMember(selectedProject.id, userId);
+      toast.success('メンバーを削除しました');
+      
+      // Reload project details
+      const data = await projectsApi.get(selectedProject.id);
+      setSelectedProject(data.project);
+      loadProjects();
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+      toast.error('メンバーの削除に失敗しました');
+    }
+  };
+
   const calculateProgress = (project: ProjectWithMembers) => {
     if (!project.startDate || !project.endDate) return 0;
     
@@ -172,6 +193,7 @@ export default function Projects() {
         project={selectedProject}
         isProjectManagerOrAbove={isProjectManagerOrAbove}
         onAddMember={() => setAddMemberDialogOpen(true)}
+        onRemoveMember={handleRemoveMember}
         getStatusLabel={getStatusLabel}
       />
 

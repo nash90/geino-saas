@@ -73,7 +73,7 @@ List all user stories organized by role and feature area.
 | ID | User Story |
 |----|------------|
 | US-08 | As an Organization Manager or above, I can create a new project with title, description, schedule, and assign Project Managers, Geino Users, and Genba Users who receive email notifications about their assignment. |
-| US-09 | As an Organization Manager or above, I can view all projects in my organization. |
+| US-09 | As an Organization Manager or above, I can view and edit all projects in my organization. |
 | US-10 | As a Project Manager or above, I can view and edit projects I'm assigned to. |
 | US-11 | As a Geino User or Genba User, I can view projects I'm assigned to (read-only). |
 
