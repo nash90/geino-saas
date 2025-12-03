@@ -10,16 +10,18 @@ import { toast } from "sonner";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { AddMemberDialog } from "@/components/projects/AddMemberDialog";
 
 export default function Projects() {
-  const { user, organizations } = useAuth();
+  const { organizations } = useAuth();
   const { isOrganizationManagerOrAbove, isProjectManagerOrAbove } = usePermissions();
   
   const [projects, setProjects] = useState<ProjectWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithMembers | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -119,7 +121,7 @@ export default function Projects() {
         startDate: data.startDate,
         endDate: data.endDate,
       });
-      
+
       toast.success('プロジェクトを作成しました');
       setCreateDialogOpen(false);
       loadProjects();
@@ -129,6 +131,45 @@ export default function Projects() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditProject = async (data: {
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    statusCode: number;
+  }) => {
+    if (!selectedProject) return;
+
+    try {
+      setSubmitting(true);
+      await projectsApi.update(selectedProject.id, {
+        name: data.name,
+        description: data.description || undefined,
+        startDate: data.startDate || undefined,
+        endDate: data.endDate || undefined,
+        statusCode: data.statusCode,
+      });
+
+      toast.success('プロジェクトを更新しました');
+      setEditDialogOpen(false);
+
+      // Reload project details
+      const updatedData = await projectsApi.get(selectedProject.id);
+      setSelectedProject(updatedData.project);
+      loadProjects();
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      toast.error('プロジェクトの更新に失敗しました');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenEdit = () => {
+    setDetailDialogOpen(false);
+    setEditDialogOpen(true);
   };
 
   const getStatusLabel = (statusCode: number) => {
@@ -194,7 +235,20 @@ export default function Projects() {
         isProjectManagerOrAbove={isProjectManagerOrAbove}
         onAddMember={() => setAddMemberDialogOpen(true)}
         onRemoveMember={handleRemoveMember}
+        onEdit={handleOpenEdit}
         getStatusLabel={getStatusLabel}
+      />
+
+      {/* Edit Project Dialog */}
+      <EditProjectDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setDetailDialogOpen(true);
+        }}
+        project={selectedProject}
+        onSubmit={handleEditProject}
+        submitting={submitting}
       />
 
       {/* Add Member Dialog */}

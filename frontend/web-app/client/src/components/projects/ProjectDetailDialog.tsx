@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import type { ProjectWithMembers } from "@/types/entities";
 
@@ -11,6 +11,7 @@ interface ProjectDetailDialogProps {
   isProjectManagerOrAbove: (projectId: string) => boolean;
   onAddMember: () => void;
   onRemoveMember: (userId: string) => void;
+  onEdit: () => void;
   getStatusLabel: (statusCode: number) => string;
 }
 
@@ -21,6 +22,7 @@ export function ProjectDetailDialog({
   isProjectManagerOrAbove,
   onAddMember,
   onRemoveMember,
+  onEdit,
   getStatusLabel,
 }: ProjectDetailDialogProps) {
   if (!project) return null;
@@ -29,7 +31,22 @@ export function ProjectDetailDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{project.name}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{project.name}</DialogTitle>
+            {isProjectManagerOrAbove(project.id) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                編集
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
