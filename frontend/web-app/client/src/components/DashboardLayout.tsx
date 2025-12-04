@@ -1,4 +1,4 @@
-import { Bell, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, UserPlus } from "lucide-react";
+import { Bell, Building2, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, UserPlus } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
@@ -14,10 +14,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [location, setLocation] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const { logout, user } = useAuth();
+  const { logout, user, organizations } = useAuth();
 
   // System admin check: systemRoleCode = 1
   const isSystemAdmin = user?.systemRoleCode === 1;
+  // Organization Manager: has at least one organization membership
+  const isOrganizationManager = organizations.length > 0;
 
   const menuItems = [
     { path: "/", label: "ホーム", icon: Home },
@@ -25,7 +27,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/projects", label: "プロジェクト一覧", icon: FolderKanban },
     { path: "/invites", label: "招待アカウント一覧", icon: UserPlus },
     { path: "/tasks-progress", label: "進捗ありタスク", icon: ListTodo },
-    ...(isSystemAdmin ? [{ path: "/system-admin", label: "システム管理", icon: Settings }] : []),
+    ...(isSystemAdmin || isOrganizationManager ? [
+      { path: "/admin/organizations", label: "組織管理", icon: Building2 },
+    ] : []),
+    ...(isSystemAdmin ? [
+      { path: "/system-admin", label: "システム管理", icon: Settings }
+    ] : []),
   ];
 
   return (

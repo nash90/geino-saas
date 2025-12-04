@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { createDbClient } from './db/client';
 import auth from './routes/auth';
 import users from './routes/users';
+import organizations from './routes/organizations';
 import type { Env } from './types';
 import type { DbClient } from './db/client';
 
@@ -41,5 +42,6 @@ app.get('/', (c) => {
 // Mount routes
 app.route('/api/auth', auth);
 app.route('/api/users', users);
+app.route('/api/organizations', organizations);
 
 export default app;

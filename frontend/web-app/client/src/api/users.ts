@@ -1,14 +1,10 @@
 import { apiClient } from './client';
 import type { AuthUser } from './auth';
+import type { PaginationParams } from '@/types/api';
 
 export interface User extends AuthUser {
   createdAt: string;
   updatedAt: string;
-}
-
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -26,6 +22,7 @@ export const usersApi = {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
     
     const response = await apiClient.get(`/api/users?${queryParams.toString()}`);
     return response.data;

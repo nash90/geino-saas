@@ -5,12 +5,13 @@ export async function listUsersHandler(c: OptionalAuthContext) {
   const db = c.get('db');
   const userQueryService = new UserQueryService(db, c.env);
   
-  // Get pagination parameters from query string
+  // Get pagination and search parameters from query string
   const page = c.req.query('page');
   const limit = c.req.query('limit');
+  const search = c.req.query('search');
 
-  // Call service layer
-  const result = await userQueryService.listUsers(page, limit);
+  // Call service layer with search parameter
+  const result = await userQueryService.listUsers(page, limit, search);
 
   if (!result.success) {
     return c.json({ error: result.error }, 500);
