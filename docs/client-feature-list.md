@@ -165,7 +165,7 @@ View Calendar
 - As any user, when I click a date on the calendar,
 - I can see the task list for the project for that day on the right side
 - As any user, when I click a task in task list,
-- I can see the task in task board (model as per current ui design)
+- I can see the task in task board (task detail model as in taskboard)
 
 
 

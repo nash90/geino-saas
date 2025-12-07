@@ -4,9 +4,10 @@ import { TaskStatusCodes } from "@/types/entities";
 interface CalendarTaskListProps {
   selectedDate: Date | null;
   tasks: TaskWithDetails[];
+  onTaskClick?: (task: TaskWithDetails) => void;
 }
 
-export function CalendarTaskList({ selectedDate, tasks }: CalendarTaskListProps) {
+export function CalendarTaskList({ selectedDate, tasks, onTaskClick }: CalendarTaskListProps) {
   const getStatusColorClass = (statusCode: number): string => {
     switch (statusCode) {
       case TaskStatusCodes.HOLD:
@@ -34,7 +35,11 @@ export function CalendarTaskList({ selectedDate, tasks }: CalendarTaskListProps)
       <div className="space-y-3">
         {tasks.length > 0 ? (
           tasks.map((task) => (
-            <div key={task.id} className="border-b pb-3">
+            <div
+              key={task.id}
+              className="border-b pb-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+              onClick={() => onTaskClick?.(task)}
+            >
               <div className="flex items-center gap-2 mb-1">
                 <div className={`w-2 h-2 rounded-full ${getStatusColorClass(task.statusCode)}`}></div>
                 <p className="text-sm font-medium">{task.title}</p>

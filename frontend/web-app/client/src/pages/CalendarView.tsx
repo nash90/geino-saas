@@ -5,10 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { tasksApi } from "@/api/tasks";
+import { projectsApi } from "@/api/projects";
 import { toast } from "sonner";
-import type { TaskWithDetails } from "@/types/entities";
+import type { TaskWithDetails, ProjectWithMembers } from "@/types/entities";
 import { TaskStatusCodes } from "@/types/entities";
-import { CalendarGrid, CalendarTaskList } from "@/components/tasks";
+import { CalendarGrid, CalendarTaskList, TaskDetailDialog } from "@/components/tasks";
 
 interface CalendarTask {
   date: string;
@@ -34,6 +35,12 @@ export default function CalendarView() {
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [calendarTasks, setCalendarTasks] = useState<CalendarTask[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingTaskDetails, setLoadingTaskDetails] = useState(false);
+
+  // Task detail dialog state
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [currentProjectDetails, setCurrentProjectDetails] = useState<ProjectWithMembers | null>(null);
 
   // Initialize with all projects user has access to
   useEffect(() => {
@@ -170,6 +177,51 @@ export default function CalendarView() {
     }
   };
 
+  const loadTaskDetails = async (taskId: string) => {
+    setLoadingTaskDetails(true);
+    try {
+      const taskWithComments = await tasksApi.get(taskId);
+      setSelectedTask(taskWithComments);
+
+      // Load project details for members
+      if (taskWithComments.projectId) {
+        const projectResponse = await projectsApi.get(taskWithComments.projectId);
+        setCurrentProjectDetails(projectResponse.project);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to load task details");
+    } finally {
+      setLoadingTaskDetails(false);
+    }
+  };
+
+  const handleTaskClick = async (task: TaskWithDetails) => {
+    setIsDetailDialogOpen(true);
+    await loadTaskDetails(task.id);
+  };
+
+  const handleTaskUpdated = async () => {
+    await loadCalendarTasks();
+    // Reload the task details if dialog is still open
+    if (selectedTask && isDetailDialogOpen) {
+      await loadTaskDetails(selectedTask.id);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setIsDetailDialogOpen(false);
+    setSelectedTask(null);
+    setCurrentProjectDetails(null);
+  };
+
+  // Get project members for assignment dropdown
+  const projectMembers = currentProjectDetails?.members?.map((m: any) => ({
+    id: m.userId,
+    email: m.user?.email || "",
+    firstname: m.user?.firstname || "",
+    lastname: m.user?.lastname || "",
+  })) || [];
+
   return (
     <div className="p-6">
       {/* Calendar Header - Full Width */}
@@ -276,10 +328,22 @@ export default function CalendarView() {
             <CalendarTaskList
               selectedDate={selectedDate}
               tasks={tasksForSelectedDate}
+              onTaskClick={handleTaskClick}
             />
           </div>
         </div>
       )}
+
+      {/* Task Detail Dialog */}
+      <TaskDetailDialog
+        task={selectedTask}
+        open={isDetailDialogOpen}
+        onClose={handleDialogClose}
+        projectMembers={projectMembers}
+        onTaskUpdated={handleTaskUpdated}
+        canEdit={selectedTask ? permissions.canEditTask(selectedTask) : false}
+        canDelete={selectedTask?.projectId ? permissions.canDeleteTask(selectedTask.projectId) : false}
+      />
     </div>
   );
 }
