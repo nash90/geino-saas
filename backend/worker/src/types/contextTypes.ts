@@ -10,6 +10,7 @@ export interface Env {
   SUPABASE_ANON_KEY: string;
   DATABASE_URL: string;
   APP_URL?: string;
+  ATTACHMENTS_BUCKET: R2Bucket;
 }
 
 /**

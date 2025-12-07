@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { users, organizationMembers, organizations } from '../../db/schema';
+import { users, organizationMembers, organizations, projects, projectMembers } from '../../db/schema';
 import { BaseAuthService } from './BaseAuthService';
 import type { ServiceResponse } from '../../types';
 import type { LoginData, LoginResponse } from '../../types/authTypes';
@@ -61,7 +61,7 @@ export class LoginService extends BaseAuthService {
    */
   async getUserMemberships(userId: string): Promise<{
     organizations: Array<{ id: string; name: string; roleCode: number }>;
-    projects: Array<{ id: string; name: string; roleCode: number }>;
+    projects: Array<{ id: string; name: string; organizationId: string; projectRoleCode: number }>;
   }> {
     try {
       // Fetch user's organizations
@@ -75,20 +75,21 @@ export class LoginService extends BaseAuthService {
         .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
         .where(eq(organizationMembers.userId, userId));
 
-      // TODO: Fetch user's projects when projects table is created
-      // const userProjects = await this.db
-      //   .select({
-      //     id: projects.id,
-      //     name: projects.name,
-      //     roleCode: projectMembers.projectRoleCode,
-      //   })
-      //   .from(projectMembers)
-      //   .innerJoin(projects, eq(projectMembers.projectId, projects.id))
-      //   .where(eq(projectMembers.userId, userId));
+      // Fetch user's projects
+      const userProjects = await this.db
+        .select({
+          id: projects.id,
+          name: projects.name,
+          organizationId: projects.organizationId,
+          projectRoleCode: projectMembers.projectRoleCode,
+        })
+        .from(projectMembers)
+        .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+        .where(eq(projectMembers.userId, userId));
 
       return {
         organizations: userOrganizations,
-        projects: [], // TODO: Return userProjects when implemented
+        projects: userProjects,
       };
     } catch (error) {
       console.error('[LoginService.getUserMemberships] Error:', error);

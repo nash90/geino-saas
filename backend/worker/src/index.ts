@@ -5,6 +5,7 @@ import auth from './routes/auth';
 import users from './routes/users';
 import organizations from './routes/organizations';
 import projects from './routes/projects';
+import tasks from './routes/tasks';
 import type { Env } from './types';
 import type { DbClient } from './db/client';
 
@@ -45,5 +46,6 @@ app.route('/api/auth', auth);
 app.route('/api/users', users);
 app.route('/api/organizations', organizations);
 app.route('/api/projects', projects);
+app.route('/api', tasks); // Tasks routes include /projects/:projectId/tasks, /tasks, /comments, /calendar, /uploads
 
 export default app;

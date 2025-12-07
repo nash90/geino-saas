@@ -73,6 +73,58 @@ export function getProjectStatusLabel(statusCode: number): string {
 }
 
 // ============================================================================
+// Task Status Codes
+// ============================================================================
+
+export const TaskStatus = {
+  HOLD: { code: 1, label: 'Hold', key: 'hold' },
+  TODO: { code: 2, label: 'To Do', key: 'todo' },
+  IN_PROGRESS: { code: 3, label: 'In Progress', key: 'in_progress' },
+  DONE: { code: 4, label: 'Done', key: 'done' }
+} as const;
+
+export const VALID_TASK_STATUS_CODES: number[] = Object.values(TaskStatus).map(status => status.code);
+
+export function getTaskStatusLabel(statusCode: number): string {
+  const status = Object.values(TaskStatus).find(s => s.code === statusCode);
+  return status?.label || 'Unknown Status';
+}
+
+// ============================================================================
+// Task Priority Codes
+// ============================================================================
+
+export const TaskPriority = {
+  LOW: { code: 1, label: 'Low', key: 'low' },
+  MEDIUM: { code: 2, label: 'Medium', key: 'medium' },
+  HIGH: { code: 3, label: 'High', key: 'high' },
+  URGENT: { code: 4, label: 'Urgent', key: 'urgent' }
+} as const;
+
+export const VALID_TASK_PRIORITY_CODES: number[] = Object.values(TaskPriority).map(priority => priority.code);
+
+export function getTaskPriorityLabel(priorityCode: number): string {
+  const priority = Object.values(TaskPriority).find(p => p.code === priorityCode);
+  return priority?.label || 'Unknown Priority';
+}
+
+// ============================================================================
+// Task Type Codes
+// ============================================================================
+
+export const TaskType = {
+  TYPE_A: { code: 1, label: 'Type A', key: 'type_a' },
+  TYPE_B: { code: 2, label: 'Type B', key: 'type_b' }
+} as const;
+
+export const VALID_TASK_TYPE_CODES: number[] = Object.values(TaskType).map(type => type.code);
+
+export function getTaskTypeLabel(typeCode: number): string {
+  const type = Object.values(TaskType).find(t => t.code === typeCode);
+  return type?.label || 'Unknown Type';
+}
+
+// ============================================================================
 // Type Exports for Type Safety
 // ============================================================================
 
@@ -80,3 +132,6 @@ export type SystemRoleCode = typeof SystemRole[keyof typeof SystemRole]['code'];
 export type OrganizationRoleCode = typeof OrganizationRole[keyof typeof OrganizationRole]['code'];
 export type ProjectRoleCode = typeof ProjectRole[keyof typeof ProjectRole]['code'];
 export type ProjectStatusCode = typeof ProjectStatus[keyof typeof ProjectStatus]['code'];
+export type TaskStatusCode = typeof TaskStatus[keyof typeof TaskStatus]['code'];
+export type TaskPriorityCode = typeof TaskPriority[keyof typeof TaskPriority]['code'];
+export type TaskTypeCode = typeof TaskType[keyof typeof TaskType]['code'];

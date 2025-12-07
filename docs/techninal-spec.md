@@ -372,7 +372,7 @@ CREATE TABLE tasks (
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   title VARCHAR(500) NOT NULL,
   description TEXT,
-  status_code INT DEFAULT 1, -- 1: todo, 2: in_progress, 3: done, 4: waiting
+  status_code INT DEFAULT 1, -- 1: hold, 2: todo, 3: in_progress, 4: done
   type_code INT, -- 1: feature, 2: bug, 3: task, 4: improvement
   priority_code INT, -- 1: low, 2: medium, 3: high, 4: urgent
   color VARCHAR(20),
@@ -475,11 +475,11 @@ As a Genba User, I can create a new task with "hold" status and edit tasks I cre
    - Assignee selector (from project members)
    - Deadline
    - Priority
-   - Status locked to "Waiting/Hold" (status_code = 4)
+   - Status locked to "Waiting/Hold" (status_code = 1)
 4. Genba User enters values and clicks Create.
-5. Frontend calls POST /api/tasks with { ...taskData, statusCode: 4, createdBy: genbaUserId }.
+5. Frontend calls POST /api/tasks with { ...taskData, statusCode: 1, createdBy: genbaUserId }.
 6. Backend verifies requester is Genba User and assigned to project.
-7. Backend creates task with status_code = 4 (hold/waiting) only.
+7. Backend creates task with status_code = 1 (hold/waiting) only.
 8. Backend emits 'task.assigned' event if assignee is specified.
 9. Backend responds with created task.
 10. Frontend adds task to "Waiting" column and shows success toast.
@@ -491,7 +491,7 @@ As a Genba User, I can create a new task with "hold" status and edit tasks I cre
 4. Backend validates created_by matches authenticated user before allowing edit.
 
 **Access Control Logic:**
-- Genba User: Can create tasks with status_code = 4 (hold) in assigned projects
+- Genba User: Can create tasks with status_code = 1 (hold) in assigned projects
 - Genba User: Can edit tasks where created_by = userId (title, description, deadline, priority only)
 - Genba User: Cannot change task status of any task (including own tasks)
 
@@ -554,9 +554,9 @@ As any user (Project Manager, Geino User, Genba User), I can comment on a task i
 8. Frontend validates comment (non-empty text or file).
 9. Frontend parses comment text to extract all mentioned emails from `@[Name](email)` pattern.
 10. If file attached, frontend uploads to /api/uploads and receives file URL.
-11. Frontend calls POST /api/tasks/:id/comments with { text: "Hey @[John Doe](john.doe@company.com), can you review?", mentionedEmails: ["john.doe@company.com"], fileUrl, fileName }.
+11. Frontend calls POST /api/tasks/:id/comments with { content: "Hey @[John Doe](john.doe@company.com), can you review?", mentionedEmails: ["john.doe@company.com"], fileUrl, fileName }.
 12. Backend verifies user has access to the project (any role).
-13. Backend creates comment row with raw text containing `@[Name](email)` format.
+13. Backend creates comment row with raw text content containing `@[Name](email)` format.
 15. Backend looks up user IDs from mentioned emails.
 16. Backend emits 'comment.created' event to Cloudflare Queue with { commentId, taskId, taskTitle, authorId, taskAssigneeId, mentionedUserIds }.
 17. Backend responds with created comment.
@@ -569,11 +569,11 @@ As any user (Project Manager, Geino User, Genba User), I can comment on a task i
 **Data Model (SQL)**
 ```sql
 -- Comments table
-CREATE TABLE comments (
+CREATE TABLE task_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
   author_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  text TEXT NOT NULL, -- Stores comment with mentions as: "Hey @[John Doe](john.doe@company.com), can you review?"
+  content TEXT NOT NULL, -- Stores comment text with mentions as: "Hey @[John Doe](john.doe@company.com), can you review?"
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );

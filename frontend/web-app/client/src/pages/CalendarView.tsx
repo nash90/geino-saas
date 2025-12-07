@@ -1,11 +1,25 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MOCK_CALENDAR_TASKS, MOCK_TASKS } from "@/../../shared/const";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { tasksApi } from "@/api/tasks";
+import { toast } from "sonner";
+import type { TaskWithDetails } from "@/types/entities";
+import { TaskStatusCodes } from "@/types/entities";
+import { CalendarGrid, CalendarTaskList } from "@/components/tasks";
+
+interface CalendarTask {
+  date: string;
+  tasks: TaskWithDetails[];
+}
 
 export default function CalendarView() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 5, 1)); // June 2025
+  const { user, projects } = useAuth();
+  const permissions = usePermissions();
+
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
@@ -16,6 +30,67 @@ export default function CalendarView() {
     monday.setDate(today.getDate() + diff);
     return monday;
   });
+
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [calendarTasks, setCalendarTasks] = useState<CalendarTask[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Initialize with all projects user has access to
+  useEffect(() => {
+    if (projects.length > 0) {
+      setSelectedProjects(projects.map((p) => p.id));
+    }
+  }, [projects]);
+
+  // Load calendar tasks when projects or date range changes
+  useEffect(() => {
+    if (selectedProjects.length > 0) {
+      loadCalendarTasks();
+    } else {
+      setCalendarTasks([]);
+    }
+  }, [selectedProjects, currentDate, currentWeekStart, viewMode]);
+
+  const loadCalendarTasks = async () => {
+    if (selectedProjects.length === 0) return;
+
+    setLoading(true);
+    try {
+      // Calculate date range based on view mode
+      let fromDate: string;
+      let toDate: string;
+
+      if (viewMode === "month") {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        fromDate = formatDate(firstDay);
+        toDate = formatDate(lastDay);
+      } else {
+        const weekEnd = new Date(currentWeekStart);
+        weekEnd.setDate(currentWeekStart.getDate() + 6);
+        fromDate = formatDate(currentWeekStart);
+        toDate = formatDate(weekEnd);
+      }
+
+      const response = await tasksApi.getCalendarTasks({
+        projectIds: selectedProjects,
+        fromDate,
+        toDate,
+      });
+
+      setCalendarTasks(response.calendarTasks);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to load calendar tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (date: Date): string => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -45,32 +120,22 @@ export default function CalendarView() {
     setCurrentWeekStart(newWeekStart);
   };
 
-  const getTasksForDate = (date: Date) => {
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    return MOCK_CALENDAR_TASKS.filter((task: any) => task.date === dateStr);
+  const getTasksForDate = (date: Date): TaskWithDetails[] => {
+    const dateStr = formatDate(date);
+    const dayTasks = calendarTasks.find((ct) => ct.date === dateStr);
+    return dayTasks?.tasks || [];
   };
 
-  const getDayTasks = (day: number) => {
+  const getDayTasks = (day: number): TaskWithDetails[] => {
     const date = new Date(year, month, day);
     return getTasksForDate(date);
   };
 
-  const getColorClass = (color: string) => {
-    switch (color) {
-      case "green":
-        return "bg-green-500";
-      case "orange":
-        return "bg-orange-500";
-      case "red":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const completedTasks = MOCK_TASKS.filter((t: any) => t.completed).length;
-  const totalTasks = MOCK_TASKS.length;
-  const progressPercentage = (completedTasks / totalTasks) * 100;
+  // Calculate progress based on all tasks
+  const allTasks = calendarTasks.flatMap((ct) => ct.tasks);
+  const completedTasks = allTasks.filter((t) => t.statusCode === TaskStatusCodes.DONE).length;
+  const totalTasks = allTasks.length;
+  const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   const weekDays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
@@ -97,12 +162,12 @@ export default function CalendarView() {
 
   const weekViewDays = getCurrentWeekDays();
 
-  const isSameDay = (date1: Date, date2: Date) => {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    );
+  const handleProjectSelection = (value: string) => {
+    if (value === "all") {
+      setSelectedProjects(projects.map((p) => p.id));
+    } else {
+      setSelectedProjects([value]);
+    }
   };
 
   return (
@@ -152,28 +217,17 @@ export default function CalendarView() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">プロジェクト選択</span>
-              <Select>
+              <Select onValueChange={handleProjectSelection} value={selectedProjects.length === projects.length ? "all" : selectedProjects[0]}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="選択してください" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">すべて</SelectItem>
-                  <SelectItem value="project1">プロジェクト1</SelectItem>
-                  <SelectItem value="project2">プロジェクト2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">タスク種別</span>
-              <Select>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="選択してください" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">すべて</SelectItem>
-                  <SelectItem value="task1">タスク1</SelectItem>
-                  <SelectItem value="task2">タスク2</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -196,145 +250,36 @@ export default function CalendarView() {
         </div>
       </div>
 
-      {/* Calendar and Tasks Section */}
-      <div className="flex gap-6">
-        {/* Calendar Section */}
-        <div className="flex-1 bg-white rounded-lg shadow p-6">
-          {viewMode === "month" ? (
-            // Monthly View
-            <div className="grid grid-cols-7 gap-2">
-              {weekDays.map((day) => (
-                <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
-                  {day}
-                </div>
-              ))}
-
-              {calendarDays.map((day, index) => {
-                if (day === null) {
-                  return <div key={`empty-${index}`} className="aspect-square"></div>;
-                }
-
-                const tasks = getDayTasks(day);
-                const date = new Date(year, month, day);
-                const isToday = date.toDateString() === new Date().toDateString();
-
-                return (
-                  <div
-                    key={day}
-                    className={`aspect-square border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      isToday ? "border-purple-500 border-2" : "border-gray-200"
-                    }`}
-                    onClick={() => setSelectedDate(date)}
-                  >
-                    <div className="text-sm font-semibold mb-1">{day}</div>
-                    <div className="space-y-1">
-                      {tasks.map((task: any) => (
-                        <div
-                          key={task.id}
-                          className={`text-xs text-white px-2 py-1 rounded ${getColorClass(task.color)}`}
-                        >
-                          {task.title}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            // Weekly View
-            <div>
-              <div className="grid grid-cols-7 gap-2">
-                {weekDays.map((day) => (
-                  <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
-                    {day}
-                  </div>
-                ))}
-
-                {weekViewDays.map((date, index) => {
-                  const tasks = getTasksForDate(date);
-                  const isToday = date.toDateString() === new Date().toDateString();
-                  const isSelected = selectedDate && isSameDay(date, selectedDate);
-
-                  return (
-                    <div
-                      key={index}
-                      className={`border rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors min-h-[200px] ${
-                        isSelected ? "border-purple-500 border-2" : isToday ? "border-purple-300 border-2" : "border-gray-200"
-                      }`}
-                      onClick={() => setSelectedDate(date)}
-                    >
-                      <div className="text-sm font-semibold mb-2">
-                        {date.getMonth() + 1}/{date.getDate()}
-                      </div>
-                      <div className="space-y-1">
-                        {tasks.map((task: any) => (
-                          <div
-                            key={task.id}
-                            className={`text-xs text-white px-2 py-1 rounded ${getColorClass(task.color)}`}
-                          >
-                            {task.title}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
         </div>
+      ) : (
+        <div className="flex gap-6">
+          {/* Calendar Section */}
+          <div className="flex-1 bg-white rounded-lg shadow p-6">
+            <CalendarGrid
+              viewMode={viewMode}
+              currentDate={currentDate}
+              currentWeekStart={currentWeekStart}
+              calendarDays={calendarDays}
+              weekViewDays={weekViewDays}
+              weekDays={weekDays}
+              getTasksForDate={getTasksForDate}
+              getDayTasks={getDayTasks}
+              onDateClick={setSelectedDate}
+            />
+          </div>
 
-        {/* Right Sidebar - Task List */}
-        <div className="w-80 bg-white rounded-lg shadow p-6">
-          {selectedDate ? (
-            <>
-              <h3 className="text-lg font-bold mb-4">
-                {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日
-              </h3>
-              <div className="mb-4">
-                <p className="font-semibold mb-2">プロジェクト名</p>
-              </div>
-              <div className="space-y-3">
-                {tasksForSelectedDate.length > 0 ? (
-                  tasksForSelectedDate.map((task: any) => (
-                    <div key={task.id} className="border-b pb-3">
-                      <p className="text-sm font-medium">{task.title}</p>
-                      <p className="text-xs text-gray-400 mt-1">期限 2025/5/27</p>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="border-b pb-3">
-                      <p className="text-sm font-medium">ここにタスクが入ります</p>
-                      <p className="text-xs text-gray-400 mt-1">期限 2025/5/27</p>
-                    </div>
-                    <div className="border-b pb-3">
-                      <p className="text-sm font-medium">ここにタスクが入ります</p>
-                      <p className="text-xs text-gray-400 mt-1">期限 2025/5/27</p>
-                    </div>
-                    <div className="border-b pb-3">
-                      <p className="text-sm font-medium">ここにタスクが入ります</p>
-                      <p className="text-xs text-gray-400 mt-1">期限 2025/5/27</p>
-                    </div>
-                    <div className="border-b pb-3">
-                      <p className="text-sm font-medium">ここにタスクが入ります</p>
-                      <p className="text-xs text-gray-400 mt-1">期限 2025/5/27</p>
-                    </div>
-                    <div className="border-b pb-3">
-                      <p className="text-sm font-medium">ここにタスクが入ります</p>
-                      <p className="text-xs text-gray-400 mt-1">期限 2025/5/27</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">日付を選択してください</p>
-          )}
+          {/* Right Sidebar - Task List */}
+          <div className="w-80 bg-white rounded-lg shadow p-6">
+            <CalendarTaskList
+              selectedDate={selectedDate}
+              tasks={tasksForSelectedDate}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-

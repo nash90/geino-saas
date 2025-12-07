@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const getProjectRole = (projectId: string): number | null => {
     const project = projects.find((proj) => proj.id === projectId);
-    return project?.role || null;
+    return project?.projectRoleCode || null;
   };
 
   return (

@@ -1,0 +1,42 @@
+import { TaskCommandService } from '../../services/tasks/TaskCommandService';
+import type { AuthContext } from '../../types';
+
+export async function updateTaskHandler(c: AuthContext) {
+  const db = c.get('db');
+  const user = c.get('user');
+  const taskCommandService = new TaskCommandService(db, c.env);
+
+  // Get task ID from path parameter
+  const taskId = c.req.param('taskId');
+
+  // Parse request body
+  const body = await c.req.json();
+  const { title, description, statusCode, typeCode, priorityCode, assignedTo, deadline } = body;
+
+  // Call service layer (permission check is done inside the service)
+  const result = await taskCommandService.updateTask(
+    taskId,
+    {
+      title,
+      description,
+      statusCode,
+      typeCode,
+      priorityCode,
+      assignedTo,
+      deadline: deadline ? new Date(deadline) : undefined,
+    },
+    user.id
+  );
+
+  if (!result.success) {
+    const statusCode = result.code === 'NOT_FOUND' ? 404 :
+                      result.code === 'FORBIDDEN' ? 403 :
+                      result.code === 'INVALID_INPUT' ? 400 : 500;
+    return c.json({ error: result.error }, statusCode);
+  }
+
+  return c.json({
+    message: 'Task updated successfully',
+    task: result.data,
+  });
+}

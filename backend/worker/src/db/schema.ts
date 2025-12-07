@@ -67,3 +67,52 @@ export const projectMembers = pgTable('project_members', {
   index('idx_project_members_user_id').on(table.userId),
   unique('unique_project_user').on(table.projectId, table.userId),
 ]);
+
+export const tasks = pgTable('tasks', {
+  id: uuid().primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull(),
+  title: varchar({ length: 500 }).notNull(),
+  description: text(),
+  statusCode: integer('status_code').notNull().default(1), // 1: hold, 2: todo, 3: in_progress, 4: done, 5: waiting
+  typeCode: integer('type_code'),
+  priorityCode: integer('priority_code'),
+  assignedTo: uuid('assigned_to'),
+  createdBy: uuid('created_by').notNull(),
+  deadline: timestamp('deadline'),
+  createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+  updatedAt: timestamp('updated_at').default(sql`now()`).notNull(),
+}, (table) => [
+  index('idx_tasks_project_id').on(table.projectId),
+  index('idx_tasks_status_code').on(table.statusCode),
+  index('idx_tasks_assigned_to').on(table.assignedTo),
+  index('idx_tasks_created_by').on(table.createdBy),
+  index('idx_tasks_deadline').on(table.deadline),
+]);
+
+export const taskComments = pgTable('task_comments', {
+  id: uuid().primaryKey().defaultRandom(),
+  taskId: uuid('task_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  content: text().notNull(),
+  createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+  updatedAt: timestamp('updated_at').default(sql`now()`).notNull(),
+}, (table) => [
+  index('idx_task_comments_task_id').on(table.taskId),
+  index('idx_task_comments_user_id').on(table.userId),
+]);
+
+export const attachments = pgTable('attachments', {
+  id: uuid().primaryKey().defaultRandom(),
+  taskId: uuid('task_id'), // Nullable - if attached to task directly
+  commentId: uuid('comment_id'), // Nullable - if attached to comment
+  fileName: varchar('file_name', { length: 500 }).notNull(),
+  fileUrl: text('file_url').notNull(), // Cloudflare R2 object key
+  fileSize: integer('file_size'), // In bytes
+  mimeType: varchar('mime_type', { length: 100 }),
+  uploadedBy: uuid('uploaded_by').notNull(),
+  createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+}, (table) => [
+  index('idx_attachments_task_id').on(table.taskId),
+  index('idx_attachments_comment_id').on(table.commentId),
+  index('idx_attachments_uploaded_by').on(table.uploadedBy),
+]);

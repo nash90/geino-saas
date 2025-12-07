@@ -1,4 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
+import type { Task } from '@/types/entities';
+import { TaskStatusCodes } from '@/types/entities';
 
 /**
  * Hook for checking user permissions
@@ -78,6 +80,110 @@ export function usePermissions() {
     return org?.organizationRoleCode || null;
   };
 
+  // ============================================================================
+  // Task Permissions
+  // ============================================================================
+
+  /**
+   * Check if user can create a task in a project
+   * - System Admin: Can create any task
+   * - Organization Manager: Can create any task in org projects
+   * - Project Manager: Can create any task in their projects
+   * - Genba User (role 3): Can create Hold status tasks only
+   * - Geino User (role 2): Cannot create tasks
+   */
+  const canCreateTask = (projectId: string, statusCode?: number): boolean => {
+    // System Admin can create any task
+    if (isSystemAdmin()) return true;
+
+    // Get project
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return false;
+
+    // Check if user is Organization Manager
+    if (isOrganizationManagerOrAbove(project.organizationId)) return true;
+
+    // Check project role
+    const projectRole = getProjectRole(projectId);
+    if (!projectRole) return false;
+
+    // Project Manager can create any task
+    if (projectRole === 1) return true;
+
+    // Genba User (role 3) can only create Hold status tasks
+    if (projectRole === 3) {
+      return statusCode === TaskStatusCodes.HOLD || statusCode === undefined;
+    }
+
+    // Geino User (role 2) cannot create tasks
+    return false;
+  };
+
+  /**
+   * Check if user can edit a task
+   * - System Admin: Can edit any task
+   * - Organization Manager: Can edit any task in org projects
+   * - Project Manager: Can edit any task in their projects
+   * - Genba User (role 3): Can edit only their own tasks
+   * - Geino User (role 2): Cannot edit tasks
+   */
+  const canEditTask = (task: Task): boolean => {
+    // System Admin can edit any task
+    if (isSystemAdmin()) return true;
+
+    // Get project
+    const project = projects.find((p) => p.id === task.projectId);
+    if (!project) return false;
+
+    // Check if user is Organization Manager
+    if (isOrganizationManagerOrAbove(project.organizationId)) return true;
+
+    // Check project role
+    const projectRole = getProjectRole(task.projectId);
+    if (!projectRole) return false;
+
+    // Project Manager can edit any task
+    if (projectRole === 1) return true;
+
+    // Genba User can edit only their own tasks
+    if (projectRole === 3 && task.createdBy === user?.id) return true;
+
+    // Geino User cannot edit tasks
+    return false;
+  };
+
+  /**
+   * Check if user can delete a task
+   * Only Project Managers or above can delete tasks
+   */
+  const canDeleteTask = (projectId: string): boolean => {
+    return isProjectManagerOrAbove(projectId);
+  };
+
+  /**
+   * Check if user can view tasks in a project
+   * Any project member can view tasks
+   */
+  const canViewTasks = (projectId: string): boolean => {
+    return isProjectMember(projectId);
+  };
+
+  /**
+   * Check if user can view/edit their own comments
+   */
+  const canEditComment = (commentUserId: string): boolean => {
+    return user?.id === commentUserId;
+  };
+
+  /**
+   * Check if user can delete a comment
+   * Owner or Project Manager+ can delete comments
+   */
+  const canDeleteComment = (commentUserId: string, projectId: string): boolean => {
+    if (user?.id === commentUserId) return true;
+    return isProjectManagerOrAbove(projectId);
+  };
+
   return {
     isSystemAdmin,
     isOrganizationManagerOrAbove,
@@ -86,5 +192,12 @@ export function usePermissions() {
     isOrganizationMember,
     getProjectRole,
     getOrganizationRole,
+    // Task permissions
+    canCreateTask,
+    canEditTask,
+    canDeleteTask,
+    canViewTasks,
+    canEditComment,
+    canDeleteComment,
   };
 }
