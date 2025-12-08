@@ -4,6 +4,8 @@ import type { OrganizationMember } from '@/types/entities';
 import { Button } from '@/components/ui/button';
 import { SearchInput } from '@/components/SearchInput';
 import { Loader2, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
+import { MESSAGES } from '@/constants/messages';
 
 interface AddMemberSectionProps {
   members: OrganizationMember[];
@@ -25,16 +27,28 @@ export function AddMemberSection({ members, onAddMember, actionLoading }: AddMem
 
     try {
       setSearchLoading(true);
-      const usersData = await usersApi.list({ page: 1, limit: 20, search: query });
-      
-      // Filter out users who are already members
-      const availableUsers = usersData.users.filter(
-        user => !members.some(member => member.userId === user.id)
-      );
-      
-      setSearchResults(availableUsers);
+      setSearchResults([]);
+
+      // Use exact email search for security
+      const result = await usersApi.findByEmail(query.trim());
+
+      if (result.user) {
+        // Check if user is already a member
+        const isAlreadyMember = members.some(member => member.userId === result.user!.id);
+        if (isAlreadyMember) {
+          // User found but already a member
+          toast.info(MESSAGES.MEMBER.USER_ALREADY_ORGANIZATION_MEMBER);
+        } else {
+          // User found and not a member - show in results
+          setSearchResults([result.user]);
+        }
+      } else {
+        // User not found
+        toast.info(MESSAGES.MEMBER.USER_NOT_FOUND);
+      }
     } catch (err: any) {
-      console.error('Failed to search users:', err);
+      console.error('Failed to search user:', err);
+      toast.error(MESSAGES.MEMBER.USER_SEARCH_FAILED);
     } finally {
       setSearchLoading(false);
     }
@@ -105,8 +119,11 @@ export function AddMemberSection({ members, onAddMember, actionLoading }: AddMem
             value={searchQuery}
             onChange={setSearchQuery}
             onSearch={handleUserSearch}
-            placeholder="名前またはメールアドレスで検索..."
+            placeholder={MESSAGES.MEMBER.SEARCH_PLACEHOLDER_EMAIL_SHORT}
           />
+          <p className="text-xs text-gray-500">
+            {MESSAGES.MEMBER.SEARCH_HELP_TEXT}
+          </p>
           
           {/* Search Results */}
           {searchLoading && (
@@ -130,12 +147,6 @@ export function AddMemberSection({ members, onAddMember, actionLoading }: AddMem
                 </button>
               ))}
             </div>
-          )}
-          
-          {!searchLoading && searchQuery && searchResults.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4">
-              検索結果が見つかりません
-            </p>
           )}
         </div>
       )}

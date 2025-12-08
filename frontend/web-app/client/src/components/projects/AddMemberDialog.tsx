@@ -9,6 +9,7 @@ import { usersApi, type User } from "@/api/users";
 import { projectsApi } from "@/api/projects";
 import { toast } from "sonner";
 import type { ProjectWithMembers } from "@/types/entities";
+import { MESSAGES } from "@/constants/messages";
 
 interface AddMemberDialogProps {
   open: boolean;
@@ -29,15 +30,30 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
     if (!searchQuery.trim() || !project) return;
 
     setSearchLoading(true);
+    setSearchResults([]);
+    setSelectedUser(null);
+
     try {
-      const results = await usersApi.list({ search: searchQuery });
-      // Filter out existing members
-      const existingMemberIds = new Set(project.members.map(m => m.userId));
-      const filteredResults = results.users.filter((user: User) => !existingMemberIds.has(user.id));
-      setSearchResults(filteredResults);
+      // Use exact email search for security
+      const result = await usersApi.findByEmail(searchQuery.trim());
+
+      if (result.user) {
+        // Check if user is already a member
+        const existingMemberIds = new Set(project.members.map(m => m.userId));
+        if (existingMemberIds.has(result.user.id)) {
+          // User found but already a member
+          toast.info(MESSAGES.MEMBER.USER_ALREADY_PROJECT_MEMBER);
+        } else {
+          // User found and not a member - show in results
+          setSearchResults([result.user]);
+        }
+      } else {
+        // User not found
+        toast.info(MESSAGES.MEMBER.USER_NOT_FOUND);
+      }
     } catch (error) {
-      console.error("Failed to search users:", error);
-      toast.error("ユーザーの検索に失敗しました");
+      console.error("Failed to search user:", error);
+      toast.error(MESSAGES.MEMBER.USER_SEARCH_FAILED);
     } finally {
       setSearchLoading(false);
     }
@@ -52,12 +68,12 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
         userId: selectedUser.id,
         projectRoleCode: Number(newMemberRole),
       });
-      toast.success("メンバーを追加しました");
+      toast.success(MESSAGES.MEMBER.MEMBER_ADDED_SUCCESS);
       onSuccess();
       handleClose();
     } catch (error) {
       console.error("Failed to add member:", error);
-      toast.error("メンバーの追加に失敗しました");
+      toast.error(MESSAGES.MEMBER.MEMBER_ADD_FAILED);
     } finally {
       setSubmitting(false);
     }
@@ -96,14 +112,17 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">ユーザーを検索</label>
+            <label className="block text-sm font-medium mb-2">メールアドレスで検索</label>
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
               onSearch={handleSearch}
-              placeholder="名前またはメールアドレスで検索"
+              placeholder={MESSAGES.MEMBER.SEARCH_PLACEHOLDER_EMAIL}
               disabled={searchLoading}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {MESSAGES.MEMBER.SEARCH_HELP_TEXT}
+            </p>
           </div>
 
           {searchLoading && (
@@ -114,7 +133,7 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
 
           {!searchLoading && searchResults.length > 0 && (
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              <p className="text-sm text-gray-600">{searchResults.length}件見つかりました</p>
+              <p className="text-sm text-gray-600">{MESSAGES.MEMBER.USER_FOUND}</p>
               {searchResults.map((user) => (
                 <div
                   key={user.id}
@@ -137,12 +156,6 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
                 </div>
               ))}
             </div>
-          )}
-
-          {!searchLoading && searchQuery && searchResults.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4">
-              ユーザーが見つかりませんでした
-            </p>
           )}
 
           <div className="flex justify-end gap-2 pt-4">
