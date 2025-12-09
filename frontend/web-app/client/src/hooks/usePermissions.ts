@@ -153,6 +153,34 @@ export function usePermissions() {
   };
 
   /**
+   * Check if user can change task status
+   * - System Admin: Can change any task status
+   * - Organization Manager: Can change any task status in org projects
+   * - Project Manager: Can change any task status in their projects
+   * - Genba User (role 3): CANNOT change task status (can only edit other fields)
+   * - Geino User (role 2): Cannot change task status
+   */
+  const canChangeTaskStatus = (task: Task): boolean => {
+    // System Admin can change any task status
+    if (isSystemAdmin()) return true;
+
+    // Get project
+    const project = projects.find((p) => p.id === task.projectId);
+    if (!project) return false;
+
+    // Check if user is Organization Manager
+    if (isOrganizationManagerOrAbove(project.organizationId)) return true;
+
+    // Check project role
+    const projectRole = getProjectRole(task.projectId);
+    if (!projectRole) return false;
+
+    // Only Project Manager (role 1) can change task status
+    // Genba User (role 3) cannot change status even for their own tasks
+    return projectRole === 1;
+  };
+
+  /**
    * Check if user can delete a task
    * Only Project Managers or above can delete tasks
    */
@@ -195,6 +223,7 @@ export function usePermissions() {
     // Task permissions
     canCreateTask,
     canEditTask,
+    canChangeTaskStatus,
     canDeleteTask,
     canViewTasks,
     canEditComment,

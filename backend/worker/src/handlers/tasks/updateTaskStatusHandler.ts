@@ -13,7 +13,7 @@ export async function updateTaskStatusHandler(c: AuthContext) {
   const body = await c.req.json();
   const { statusCode } = body;
 
-  if (!statusCode) {
+  if (statusCode === undefined || statusCode === null) {
     return c.json({ error: 'Status code is required' }, 400);
   }
 

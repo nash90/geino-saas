@@ -133,9 +133,9 @@ export default function TaskBoard() {
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
 
-    // Check permission
-    if (!permissions.canEditTask(activeTask)) {
-      toast.error("You don't have permission to move this task");
+    // Check permission - must be able to change task status (PM+ only)
+    if (!permissions.canChangeTaskStatus(activeTask)) {
+      toast.error("You don't have permission to change task status. Only Project Managers can change task status.");
       return;
     }
 
@@ -262,6 +262,7 @@ export default function TaskBoard() {
                   selectedProject,
                   TaskStatusCodes.HOLD
                 )}
+                canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
               <Column
                 id="todo"
@@ -271,6 +272,7 @@ export default function TaskBoard() {
                 onTaskClick={handleTaskClick}
                 onAddTask={() => handleAddTask(TaskStatusCodes.TODO)}
                 showAddButton={canCreateAnyStatus}
+                canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
               <Column
                 id="inProgress"
@@ -280,6 +282,7 @@ export default function TaskBoard() {
                 onTaskClick={handleTaskClick}
                 onAddTask={() => handleAddTask(TaskStatusCodes.IN_PROGRESS)}
                 showAddButton={canCreateAnyStatus}
+                canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
               <Column
                 id="done"
@@ -289,6 +292,7 @@ export default function TaskBoard() {
                 onTaskClick={handleTaskClick}
                 onAddTask={() => handleAddTask(TaskStatusCodes.DONE)}
                 showAddButton={canCreateAnyStatus}
+                canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
             </div>
 

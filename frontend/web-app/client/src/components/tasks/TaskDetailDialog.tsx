@@ -18,11 +18,12 @@ import {
 import { Edit, Copy, Upload, Download, Save, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
-import type { TaskWithDetails } from "@/types/entities";
+import type { TaskWithComments, TaskComment, Attachment } from "@/types/entities";
 import { TaskStatusCodes } from "@/types/entities";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface TaskDetailDialogProps {
-  task: TaskWithDetails | null;
+  task: TaskWithComments | null;
   open: boolean;
   onClose: () => void;
   projectMembers: Array<{ id: string; email: string; firstname: string; lastname: string }>;
@@ -48,6 +49,7 @@ export function TaskDetailDialog({
   const [editedDeadline, setEditedDeadline] = useState("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const permissions = usePermissions();
 
   // Initialize edit form when task changes
   useEffect(() => {
@@ -87,13 +89,19 @@ export function TaskDetailDialog({
 
     setLoading(true);
     try {
-      await tasksApi.update(task.id, {
+      const updateData: any = {
         title: editedTitle.trim(),
         description: editedDescription.trim() || undefined,
-        statusCode: editedStatusCode,
         assignedTo: editedAssignedTo || undefined,
         deadline: editedDeadline ? new Date(editedDeadline).toISOString() : undefined,
-      });
+      };
+
+      // Only include statusCode if user has permission to change it
+      if (permissions.canChangeTaskStatus(task)) {
+        updateData.statusCode = editedStatusCode;
+      }
+
+      await tasksApi.update(task.id, updateData);
       toast.success("タスクが更新されました");
       setIsEditMode(false);
       onTaskUpdated();
@@ -151,7 +159,7 @@ export function TaskDetailDialog({
               <Select
                 value={editedStatusCode.toString()}
                 onValueChange={(value) => setEditedStatusCode(parseInt(value))}
-                disabled={!canEdit || !isEditMode}
+                disabled={!isEditMode || !permissions.canChangeTaskStatus(task)}
               >
                 <SelectTrigger className="w-[150px] bg-orange-50 border-orange-200">
                   <SelectValue />

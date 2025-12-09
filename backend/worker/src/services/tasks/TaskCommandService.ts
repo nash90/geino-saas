@@ -169,6 +169,13 @@ export class TaskCommandService extends BaseTaskService {
         return this.error('Invalid status code', 'INVALID_INPUT');
       }
 
+      // Genba Users (role 3) cannot change task status - they can only edit other fields
+      if (data.statusCode !== undefined &&
+          editCheck.projectMember?.projectRoleCode === 3 &&
+          data.statusCode !== task.statusCode) {
+        return this.error('Genba users cannot change task status. Only Project Managers can change task status.', 'FORBIDDEN');
+      }
+
       // Validate type code if provided
       if (data.typeCode !== undefined && !this.validateTaskTypeCode(data.typeCode)) {
         return this.error('Invalid task type code', 'INVALID_INPUT');
@@ -254,6 +261,11 @@ export class TaskCommandService extends BaseTaskService {
       const editCheck = await this.canUserEditTask(userId, taskId);
       if (!editCheck.canEdit) {
         return this.error('You do not have permission to edit this task', 'FORBIDDEN');
+      }
+
+      // Genba Users (role 3) cannot change task status via drag-and-drop
+      if (editCheck.projectMember?.projectRoleCode === 3) {
+        return this.error('Genba users cannot change task status. Only Project Managers can change task status.', 'FORBIDDEN');
       }
 
       // Update status

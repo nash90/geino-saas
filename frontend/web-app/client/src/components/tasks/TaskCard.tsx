@@ -5,11 +5,13 @@ import type { TaskWithDetails } from "@/types/entities";
 interface TaskCardProps {
   task: TaskWithDetails;
   onClick: () => void;
+  isDraggable?: boolean;
 }
 
-export function TaskCard({ task, onClick }: TaskCardProps) {
+export function TaskCard({ task, onClick, isDraggable = true }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
+    disabled: !isDraggable,
   });
 
   const style = {
@@ -50,9 +52,9 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(isDraggable ? listeners : {})}
       onClick={onClick}
-      className={`bg-white rounded-lg shadow p-4 border-l-4 ${getPriorityColor(task.priorityCode)} cursor-pointer hover:shadow-md transition-shadow`}
+      className={`bg-white rounded-lg shadow p-4 border-l-4 ${getPriorityColor(task.priorityCode)} cursor-pointer hover:shadow-md transition-shadow ${!isDraggable ? 'opacity-90' : ''}`}
     >
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-semibold text-sm flex-1">{task.title}</h3>

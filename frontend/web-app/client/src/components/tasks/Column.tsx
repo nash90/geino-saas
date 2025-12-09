@@ -13,6 +13,7 @@ interface ColumnProps {
   onTaskClick: (task: TaskWithDetails) => void;
   onAddTask?: () => void;
   showAddButton?: boolean;
+  canDragTasks?: (task: TaskWithDetails) => boolean;
 }
 
 export function Column({
@@ -23,6 +24,7 @@ export function Column({
   onTaskClick,
   onAddTask,
   showAddButton = false,
+  canDragTasks,
 }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
@@ -43,7 +45,12 @@ export function Column({
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onTaskClick(task)}
+              isDraggable={canDragTasks ? canDragTasks(task) : true}
+            />
           ))}
         </div>
       </SortableContext>
