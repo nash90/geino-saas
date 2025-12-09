@@ -18,7 +18,7 @@ import {
 import { Edit, Copy, Upload, Download, Save, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
-import type { TaskWithComments, TaskComment, Attachment } from "@/types/entities";
+import type { TaskWithComments } from "@/types/entities";
 import { TaskStatusCodes } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -39,7 +39,6 @@ export function TaskDetailDialog({
   projectMembers,
   onTaskUpdated,
   canEdit,
-  canDelete,
 }: TaskDetailDialogProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
@@ -64,21 +63,6 @@ export function TaskDetailDialog({
   }, [task]);
 
   if (!task) return null;
-
-  const getStatusLabel = (statusCode: number) => {
-    switch (statusCode) {
-      case TaskStatusCodes.HOLD:
-        return "Hold";
-      case TaskStatusCodes.TODO:
-        return "To do";
-      case TaskStatusCodes.IN_PROGRESS:
-        return "進行中";
-      case TaskStatusCodes.DONE:
-        return "完了";
-      default:
-        return "";
-    }
-  };
 
   const handleSave = async () => {
     if (!task) return;

@@ -3,7 +3,7 @@ import { tasks, projectMembers, users } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { ServiceResponse } from '../../types';
 import type { Task } from '../../types/models';
-import { TaskStatus } from '../../types/codeTypes';
+import { TaskStatus, ProjectRole } from '../../types/codeTypes';
 
 export interface CreateTaskData {
   projectId: string;
@@ -66,8 +66,8 @@ export class TaskCommandService extends BaseTaskService {
         return this.error('Invalid status code', 'INVALID_INPUT');
       }
 
-      // Genba Users (role 3) can only create Hold status tasks
-      if (userRoleCode === 3 && statusCode !== TaskStatus.HOLD.code) {
+      // Genba Users can only create Hold status tasks
+      if (userRoleCode === ProjectRole.GENBA_USER.code && statusCode !== TaskStatus.HOLD.code) {
         return this.error('Genba users can only create tasks with Hold status', 'FORBIDDEN');
       }
 
@@ -169,9 +169,9 @@ export class TaskCommandService extends BaseTaskService {
         return this.error('Invalid status code', 'INVALID_INPUT');
       }
 
-      // Genba Users (role 3) cannot change task status - they can only edit other fields
+      // Genba Users cannot change task status - they can only edit other fields
       if (data.statusCode !== undefined &&
-          editCheck.projectMember?.projectRoleCode === 3 &&
+          editCheck.projectMember?.projectRoleCode === ProjectRole.GENBA_USER.code &&
           data.statusCode !== task.statusCode) {
         return this.error('Genba users cannot change task status. Only Project Managers can change task status.', 'FORBIDDEN');
       }
@@ -263,8 +263,8 @@ export class TaskCommandService extends BaseTaskService {
         return this.error('You do not have permission to edit this task', 'FORBIDDEN');
       }
 
-      // Genba Users (role 3) cannot change task status via drag-and-drop
-      if (editCheck.projectMember?.projectRoleCode === 3) {
+      // Genba Users cannot change task status via drag-and-drop
+      if (editCheck.projectMember?.projectRoleCode === ProjectRole.GENBA_USER.code) {
         return this.error('Genba users cannot change task status. Only Project Managers can change task status.', 'FORBIDDEN');
       }
 
@@ -304,7 +304,7 @@ export class TaskCommandService extends BaseTaskService {
       }
 
       // Only Project Managers can delete tasks
-      if (accessCheck.projectMember?.projectRoleCode !== 1) {
+      if (accessCheck.projectMember?.projectRoleCode !== ProjectRole.PROJECT_MANAGER.code) {
         return this.error('Only Project Managers can delete tasks', 'FORBIDDEN');
       }
 

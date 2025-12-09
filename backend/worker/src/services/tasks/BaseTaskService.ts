@@ -5,7 +5,8 @@ import { tasks, projectMembers } from '../../db/schema';
 import {
   VALID_TASK_STATUS_CODES,
   VALID_TASK_PRIORITY_CODES,
-  VALID_TASK_TYPE_CODES
+  VALID_TASK_TYPE_CODES,
+  ProjectRole
 } from '../../types/codeTypes';
 
 /**
@@ -138,9 +139,9 @@ export abstract class BaseTaskService {
   /**
    * Check if user can edit a task
    * Rules:
-   * - Project Managers (role 1) can edit all tasks in their projects
-   * - Genba Users (role 3) can only edit tasks they created
-   * - Geino Users (role 2) cannot edit tasks
+   * - Project Managers can edit all tasks in their projects
+   * - Genba Users can only edit tasks they created
+   * - Geino Users cannot edit tasks
    */
   protected async canUserEditTask(
     userId: string,
@@ -155,12 +156,12 @@ export abstract class BaseTaskService {
     const { task, projectMember } = accessCheck;
 
     // Project Managers can edit any task
-    if (projectMember.projectRoleCode === 1) {
+    if (projectMember.projectRoleCode === ProjectRole.PROJECT_MANAGER.code) {
       return { canEdit: true, task, projectMember };
     }
 
     // Genba Users can edit only their own tasks
-    if (projectMember.projectRoleCode === 3 && task.createdBy === userId) {
+    if (projectMember.projectRoleCode === ProjectRole.GENBA_USER.code && task.createdBy === userId) {
       return { canEdit: true, task, projectMember };
     }
 
