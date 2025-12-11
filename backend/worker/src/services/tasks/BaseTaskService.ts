@@ -1,12 +1,14 @@
 import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../../db/client';
 import type { Env, ServiceResponse } from '../../types';
-import { tasks, projectMembers } from '../../db/schema';
+import { tasks, projectMembers, projects, organizationMembers, users } from '../../db/schema';
 import {
   VALID_TASK_STATUS_CODES,
   VALID_TASK_PRIORITY_CODES,
   VALID_TASK_TYPE_CODES,
-  ProjectRole
+  ProjectRole,
+  SystemRole,
+  OrganizationRole
 } from '../../types/codeTypes';
 
 /**
@@ -100,8 +102,13 @@ export abstract class BaseTaskService {
   }
 
   /**
-   * Check if user has access to a task (via project membership)
+   * Check if user has access to a task (via project membership, org manager, or system admin)
    * Returns the task and project member record if access granted
+   *
+   * Access Rules:
+   * - System Admin: Has access to all tasks (gets PM privileges)
+   * - Organization Manager: Has access to all tasks in their organizations (gets PM privileges)
+   * - Project Members: Has access to tasks in their projects
    */
   protected async canUserAccessTask(
     userId: string,
@@ -115,6 +122,48 @@ export abstract class BaseTaskService {
 
       if (!task) {
         return { hasAccess: false };
+      }
+
+      // Check if user is System Admin
+      const user = await this.db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { systemRoleCode: true }
+      });
+
+      if (user?.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) {
+        // System Admin has access to all tasks with PM privileges
+        return {
+          hasAccess: true,
+          task,
+          projectMember: { projectRoleCode: ProjectRole.PROJECT_MANAGER.code }
+        };
+      }
+
+      // Get the project to check organization
+      const project = await this.db.query.projects.findFirst({
+        where: eq(projects.id, task.projectId),
+      });
+
+      if (!project) {
+        return { hasAccess: false, task };
+      }
+
+      // Check if user is Organization Manager of the project's organization
+      const orgManager = await this.db.query.organizationMembers.findFirst({
+        where: and(
+          eq(organizationMembers.organizationId, project.organizationId),
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+        )
+      });
+
+      if (orgManager) {
+        // Organization Manager has access with PM privileges
+        return {
+          hasAccess: true,
+          task,
+          projectMember: { projectRoleCode: ProjectRole.PROJECT_MANAGER.code }
+        };
       }
 
       // Check if user is a member of the task's project

@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import type { Task } from '@/types/entities';
-import { TaskStatusCodes } from '@/types/entities';
+import { TaskStatusCodes, SystemRole, OrganizationRole, ProjectRole } from '@/types/entities';
 
 /**
  * Hook for checking user permissions
@@ -13,7 +13,7 @@ export function usePermissions() {
    * Check if user is System Admin
    */
   const isSystemAdmin = (): boolean => {
-    return user?.systemRoleCode === 1;
+    return user?.systemRoleCode === SystemRole.SYSTEM_ADMIN.code;
   };
 
   /**
@@ -26,7 +26,7 @@ export function usePermissions() {
 
     // Check if user is Organization Manager of this organization
     const org = organizations.find((o) => o.id === organizationId);
-    return org?.organizationRoleCode === 1; // 1 = organization_manager
+    return org?.organizationRoleCode === OrganizationRole.ORGANIZATION_MANAGER.code;
   };
 
   /**
@@ -45,7 +45,7 @@ export function usePermissions() {
     if (isOrganizationManagerOrAbove(project.organizationId)) return true;
 
     // Check if user is Project Manager of this project
-    return project.projectRoleCode === 1; // 1 = project_manager
+    return project.projectRoleCode === ProjectRole.PROJECT_MANAGER.code;
   };
 
   /**
@@ -108,14 +108,14 @@ export function usePermissions() {
     if (!projectRole) return false;
 
     // Project Manager can create any task
-    if (projectRole === 1) return true;
+    if (projectRole === ProjectRole.PROJECT_MANAGER.code) return true;
 
-    // Genba User (role 3) can only create Hold status tasks
-    if (projectRole === 3) {
+    // Genba User can only create Hold status tasks
+    if (projectRole === ProjectRole.GENBA_USER.code) {
       return statusCode === TaskStatusCodes.HOLD || statusCode === undefined;
     }
 
-    // Geino User (role 2) cannot create tasks
+    // Geino User cannot create tasks
     return false;
   };
 
@@ -143,10 +143,10 @@ export function usePermissions() {
     if (!projectRole) return false;
 
     // Project Manager can edit any task
-    if (projectRole === 1) return true;
+    if (projectRole === ProjectRole.PROJECT_MANAGER.code) return true;
 
     // Genba User can edit only their own tasks
-    if (projectRole === 3 && task.createdBy === user?.id) return true;
+    if (projectRole === ProjectRole.GENBA_USER.code && task.createdBy === user?.id) return true;
 
     // Geino User cannot edit tasks
     return false;
@@ -175,9 +175,9 @@ export function usePermissions() {
     const projectRole = getProjectRole(task.projectId);
     if (!projectRole) return false;
 
-    // Only Project Manager (role 1) can change task status
-    // Genba User (role 3) cannot change status even for their own tasks
-    return projectRole === 1;
+    // Only Project Manager can change task status
+    // Genba User cannot change status even for their own tasks
+    return projectRole === ProjectRole.PROJECT_MANAGER.code;
   };
 
   /**

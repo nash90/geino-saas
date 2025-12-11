@@ -189,3 +189,20 @@ export const TaskType: Record<string, CodeType> = {
   TYPE_A: { code: 1, label: 'Type A', key: 'type_a' },
   TYPE_B: { code: 2, label: 'Type B', key: 'type_b' }
 };
+
+// Role code constants
+export const SystemRole = {
+  SYSTEM_ADMIN: { code: 1, label: 'System Admin', key: 'system_admin' },
+  REGULAR_USER: { code: 2, label: 'Regular User', key: 'regular_user' }
+} as const;
+
+export const OrganizationRole = {
+  ORGANIZATION_MANAGER: { code: 1, label: 'Organization Manager', key: 'organization_manager' },
+  ORGANIZATION_MEMBER: { code: 2, label: 'Organization Member', key: 'organization_member' }
+} as const;
+
+export const ProjectRole = {
+  PROJECT_MANAGER: { code: 1, label: 'Project Manager', key: 'project_manager' },
+  GEINO_USER: { code: 2, label: 'Geino User', key: 'geino_user' },
+  GENBA_USER: { code: 3, label: 'Genba User', key: 'genba_user' }
+} as const;

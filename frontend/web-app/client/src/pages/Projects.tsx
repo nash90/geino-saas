@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { projectsApi } from "@/api/projects";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +32,7 @@ export default function Projects() {
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithMembers | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<string>("all");
 
   // Load projects on mount
   useEffect(() => {
@@ -184,10 +192,32 @@ export default function Projects() {
   // Check if user can create projects in any organization
   const canCreateProject = organizations.some(org => isOrganizationManagerOrAbove(org.id));
 
+  // Filter projects by selected organization
+  const filteredProjects = selectedOrganization === "all"
+    ? projects
+    : projects.filter(p => p.organizationId === selectedOrganization);
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">プロジェクト一覧</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">プロジェクト一覧</h1>
+          {organizations.length > 1 && (
+            <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
+              <SelectTrigger className="w-[250px]">
+                <SelectValue placeholder="組織でフィルター" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">すべての組織</SelectItem>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
         {canCreateProject && (
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -200,13 +230,15 @@ export default function Projects() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
-      ) : projects.length === 0 ? (
+      ) : filteredProjects.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          プロジェクトがありません
+          {projects.length === 0
+            ? "プロジェクトがありません"
+            : "選択した組織にプロジェクトがありません"}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}

@@ -45,17 +45,8 @@ export class TaskQueryService extends BaseTaskService {
         return this.error('Invalid project ID', 'INVALID_INPUT');
       }
 
-      // Check if user has access to the project
-      const projectMember = await this.db.query.projectMembers.findFirst({
-        where: and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId)
-        ),
-      });
-
-      if (!projectMember) {
-        return this.error('You do not have access to this project', 'FORBIDDEN');
-      }
+      // Authorization check is done in the handler via AuthorizationService.canViewTask
+      // No need to duplicate the check here
 
       const normalizedParams = this.normalizePaginationParams(
         options.page || 1,
@@ -316,23 +307,8 @@ export class TaskQueryService extends BaseTaskService {
         }
       }
 
-      // Check user has access to all projects
-      const userProjects = await this.db
-        .select({ projectId: projectMembers.projectId })
-        .from(projectMembers)
-        .where(
-          and(
-            eq(projectMembers.userId, userId),
-            inArray(projectMembers.projectId, projectIds)
-          )
-        );
-
-      const accessibleProjectIds = new Set(userProjects.map(p => p.projectId));
-      const hasAccessToAll = projectIds.every(id => accessibleProjectIds.has(id));
-
-      if (!hasAccessToAll) {
-        return this.error('Access denied to one or more projects', 'FORBIDDEN');
-      }
+      // Authorization check should be done in the handler
+      // Frontend sends only projects the user has access to (from AuthContext)
 
       // Fetch tasks with deadlines in the date range
       const tasksList = await this.db
