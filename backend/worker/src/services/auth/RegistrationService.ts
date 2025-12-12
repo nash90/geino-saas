@@ -36,7 +36,7 @@ export class RegistrationService extends BaseAuthService {
             firstname: data.firstname,
             lastname: data.lastname
           },
-          emailRedirectTo: `${appUrl}/login`
+          emailRedirectTo: appUrl
         }
       });
 
