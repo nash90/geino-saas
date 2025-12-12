@@ -1,0 +1,84 @@
+/**
+ * Wrangler Configuration - Production Environment
+ * Deploys to CLIENT'S Cloudflare account
+ * Domain: TBD (client's domain)
+ *
+ * IMPORTANT: Before deploying to production:
+ * 1. Update .env.production with client's credentials
+ * 2. Switch to client's Cloudflare account (wrangler logout && wrangler login)
+ * 3. Update "zone_name" below with client's domain
+ * 4. Update APP_URL with client's frontend domain
+ * 5. Create R2 bucket in client's account
+ * 6. Set all secrets in client's account
+ *
+ * Deploy with: pnpm deploy:production
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "geino-saas-prod",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-11-28",
+	"compatibility_flags": ["nodejs_compat"],
+
+	"observability": {
+		"enabled": true
+	},
+
+	/**
+	 * Environment Variables (Non-sensitive)
+	 * UPDATE THESE WITH CLIENT'S PRODUCTION URLS
+	 */
+	"vars": {
+		"APP_URL": "https://app.client-domain.com",
+		"ENVIRONMENT": "production"
+	},
+
+	/**
+	 * Routes - Bind to client's custom domain
+	 * UPDATE "zone_name" and "pattern" with client's domain
+	 *
+	 * You need to add this route in client's Cloudflare Dashboard:
+	 * Workers & Pages > geino-saas-prod > Settings > Triggers > Routes
+	 */
+	"routes": [
+		{
+			"pattern": "api.client-domain.com/*",
+			"zone_name": "client-domain.com"
+		}
+	],
+
+	/**
+	 * R2 Buckets (for file uploads)
+	 * Create bucket in client's account first:
+	 * wrangler r2 bucket create geino-saas-prod-uploads
+	 */
+	// "r2_buckets": [
+	// 	{
+	// 		"binding": "R2_BUCKET",
+	// 		"bucket_name": "geino-saas-prod-uploads"
+	// 	}
+	// ],
+
+	/**
+	 * Secrets (Set via CLI in CLIENT'S account)
+	 * Run these commands after switching to client's account:
+	 *
+	 * wrangler secret put SUPABASE_URL --env production
+	 * wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env production
+	 * wrangler secret put DATABASE_URL --env production
+	 */
+
+	/**
+	 * Production Monitoring & Logging
+	 */
+	"logpush": false,
+
+	/**
+	 * Analytics Engine (Optional - track custom metrics)
+	 */
+	// "analytics_engine_datasets": [
+	// 	{
+	// 		"binding": "ANALYTICS"
+	// 	}
+	// ]
+}

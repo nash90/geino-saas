@@ -1,5 +1,5 @@
 import { BaseTaskService } from './BaseTaskService';
-import { tasks, users, projectMembers, taskComments, attachments } from '../../db/schema';
+import { tasks, users, taskComments, attachments } from '../../db/schema';
 import { eq, sql, desc, and, gte, lte, inArray } from 'drizzle-orm';
 import type {
   ServiceResponse,
@@ -7,7 +7,6 @@ import type {
   PaginatedResponse,
 } from '../../types';
 import type {
-  Task,
   TaskWithDetails,
   TaskWithComments,
   TaskCommentWithUser,
@@ -37,7 +36,7 @@ export class TaskQueryService extends BaseTaskService {
    */
   async listTasks(
     projectId: string,
-    userId: string,
+    _userId: string,
     options: TaskListOptions
   ): Promise<ServiceResponse<PaginatedResponse<TaskWithDetails>>> {
     try {
@@ -291,7 +290,7 @@ export class TaskQueryService extends BaseTaskService {
    */
   async getTasksForCalendar(
     projectIds: string[],
-    userId: string,
+    _userId: string,
     fromDate: Date,
     toDate: Date
   ): Promise<ServiceResponse<CalendarTask[]>> {

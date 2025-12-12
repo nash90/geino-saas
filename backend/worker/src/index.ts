@@ -14,12 +14,19 @@ const app = new Hono<{ Bindings: Env; Variables: { db: DbClient } }>();
 // CORS middleware
 app.use('*', cors({
   origin: (origin) => {
-    // Allow localhost and your production domains
+    // Allow localhost and production domains
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:5173',
-      // Add your production domains here
+      'https://geinosaas.yamacity.com', // Staging
+      // Production domains will be added when deploying to client's account
     ];
+    
+    // Allow Cloudflare Pages preview deployments (*.pages.dev)
+    if (origin && origin.includes('.pages.dev')) {
+      return origin;
+    }
+    
     return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
   },
   credentials: true,
