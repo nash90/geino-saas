@@ -66,7 +66,7 @@ export class LoginService extends BaseAuthService {
    * - Regular Users: Only organizations and projects they are explicitly members of
    */
   async getUserMemberships(userId: string): Promise<{
-    organizations: Array<{ id: string; name: string; roleCode: number }>;
+    organizations: Array<{ id: string; name: string; organizationRoleCode: number }>;
     projects: Array<{ id: string; name: string; organizationId: string; projectRoleCode: number }>;
   }> {
     try {
@@ -76,7 +76,7 @@ export class LoginService extends BaseAuthService {
         columns: { systemRoleCode: true }
       });
 
-      let userOrganizations: Array<{ id: string; name: string; roleCode: number }> = [];
+      let userOrganizations: Array<{ id: string; name: string; organizationRoleCode: number }> = [];
 
       // System Admin: Return ALL organizations with Organization Manager privileges
       if (user?.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) {
@@ -89,7 +89,7 @@ export class LoginService extends BaseAuthService {
 
         userOrganizations = allOrgs.map(org => ({
           ...org,
-          roleCode: OrganizationRole.ORGANIZATION_MANAGER.code, // System Admin gets Org Manager privileges
+          organizationRoleCode: OrganizationRole.ORGANIZATION_MANAGER.code, // System Admin gets Org Manager privileges
         }));
       } else {
         // Regular users: Fetch organizations where they are members
@@ -97,7 +97,7 @@ export class LoginService extends BaseAuthService {
           .select({
             id: organizations.id,
             name: organizations.name,
-            roleCode: organizationMembers.organizationRoleCode,
+            organizationRoleCode: organizationMembers.organizationRoleCode,
           })
           .from(organizationMembers)
           .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
@@ -128,7 +128,7 @@ export class LoginService extends BaseAuthService {
       } else {
         // Get organization IDs where user is an Organization Manager
         const managedOrgIds = userOrganizations
-          .filter(org => org.roleCode === OrganizationRole.ORGANIZATION_MANAGER.code)
+          .filter(org => org.organizationRoleCode === OrganizationRole.ORGANIZATION_MANAGER.code)
           .map(org => org.id);
 
         // Fetch projects where user is a direct member

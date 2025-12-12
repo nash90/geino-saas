@@ -77,10 +77,10 @@ export function getProjectStatusLabel(statusCode: number): string {
 // ============================================================================
 
 export const TaskStatus = {
-  HOLD: { code: 1, label: 'Hold', key: 'hold' },
-  TODO: { code: 2, label: 'To Do', key: 'todo' },
-  IN_PROGRESS: { code: 3, label: 'In Progress', key: 'in_progress' },
-  DONE: { code: 4, label: 'Done', key: 'done' }
+  HOLD: { code: 1, label: '保留', key: 'hold' },
+  TODO: { code: 2, label: '未着手', key: 'todo' },
+  IN_PROGRESS: { code: 3, label: '進行中', key: 'in_progress' },
+  DONE: { code: 4, label: '完了', key: 'done' }
 } as const;
 
 export const VALID_TASK_STATUS_CODES: number[] = Object.values(TaskStatus).map(status => status.code);

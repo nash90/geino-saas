@@ -164,18 +164,11 @@ export interface CodeType {
   key: string;
 }
 
-export const TaskStatusCodes = {
-  HOLD: 1,
-  TODO: 2,
-  IN_PROGRESS: 3,
-  DONE: 4
-} as const;
-
 export const TaskStatus: Record<string, CodeType> = {
-  HOLD: { code: 1, label: 'Hold', key: 'hold' },
-  TODO: { code: 2, label: 'To Do', key: 'todo' },
-  IN_PROGRESS: { code: 3, label: 'In Progress', key: 'in_progress' },
-  DONE: { code: 4, label: 'Done', key: 'done' }
+  HOLD: { code: 1, label: '保留', key: 'hold' },
+  TODO: { code: 2, label: '未着手', key: 'todo' },
+  IN_PROGRESS: { code: 3, label: '進行中', key: 'in_progress' },
+  DONE: { code: 4, label: '完了', key: 'done' }
 };
 
 export const TaskPriority: Record<string, CodeType> = {
@@ -186,8 +179,8 @@ export const TaskPriority: Record<string, CodeType> = {
 };
 
 export const TaskType: Record<string, CodeType> = {
-  TYPE_A: { code: 1, label: 'Type A', key: 'type_a' },
-  TYPE_B: { code: 2, label: 'Type B', key: 'type_b' }
+  TYPE_A: { code: 1, label: 'タスク種別A', key: 'type_a' },
+  TYPE_B: { code: 2, label: 'タスク種別B', key: 'type_b' }
 };
 
 // Role code constants

@@ -1,5 +1,5 @@
 import type { TaskWithDetails } from "@/types/entities";
-import { TaskStatusCodes } from "@/types/entities";
+import { TaskStatus } from "@/types/entities";
 
 interface CalendarGridProps {
   viewMode: "month" | "week";
@@ -29,13 +29,13 @@ export function CalendarGrid({
 
   const getStatusColorClass = (statusCode: number): string => {
     switch (statusCode) {
-      case TaskStatusCodes.HOLD:
+      case TaskStatus.HOLD.code:
         return "bg-gray-500";
-      case TaskStatusCodes.TODO:
+      case TaskStatus.TODO.code:
         return "bg-blue-500";
-      case TaskStatusCodes.IN_PROGRESS:
+      case TaskStatus.IN_PROGRESS.code:
         return "bg-yellow-500";
-      case TaskStatusCodes.DONE:
+      case TaskStatus.DONE.code:
         return "bg-green-500";
       default:
         return "bg-gray-500";

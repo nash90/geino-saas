@@ -27,14 +27,16 @@ export class RegistrationService extends BaseAuthService {
       }
 
       // Create Supabase auth user
+      const appUrl = this.env.APP_URL || 'http://localhost:3000';
       const { data: authData, error: authError } = await this.supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: { 
-            firstname: data.firstname, 
-            lastname: data.lastname 
-          }
+          data: {
+            firstname: data.firstname,
+            lastname: data.lastname
+          },
+          emailRedirectTo: `${appUrl}/login`
         }
       });
 

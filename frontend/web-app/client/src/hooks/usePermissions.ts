@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import type { Task } from '@/types/entities';
-import { TaskStatusCodes, SystemRole, OrganizationRole, ProjectRole } from '@/types/entities';
+import { TaskStatus, SystemRole, OrganizationRole, ProjectRole } from '@/types/entities';
 
 /**
  * Hook for checking user permissions
@@ -112,7 +112,7 @@ export function usePermissions() {
 
     // Genba User can only create Hold status tasks
     if (projectRole === ProjectRole.GENBA_USER.code) {
-      return statusCode === TaskStatusCodes.HOLD || statusCode === undefined;
+      return statusCode === TaskStatus.HOLD.code || statusCode === undefined;
     }
 
     // Geino User cannot create tasks

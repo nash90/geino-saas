@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import { projectsApi } from "@/api/projects";
 import type { TaskWithDetails, ProjectWithMembers } from "@/types/entities";
-import { TaskStatusCodes } from "@/types/entities";
+import { TaskStatus } from "@/types/entities";
 import {
   TaskCard,
   Column,
@@ -33,17 +33,17 @@ import {
 type ColumnType = "hold" | "todo" | "inProgress" | "done";
 
 const statusCodeToColumn: Record<number, ColumnType> = {
-  [TaskStatusCodes.HOLD]: "hold",
-  [TaskStatusCodes.TODO]: "todo",
-  [TaskStatusCodes.IN_PROGRESS]: "inProgress",
-  [TaskStatusCodes.DONE]: "done",
+  [TaskStatus.HOLD.code]: "hold",
+  [TaskStatus.TODO.code]: "todo",
+  [TaskStatus.IN_PROGRESS.code]: "inProgress",
+  [TaskStatus.DONE.code]: "done",
 };
 
 const columnToStatusCode: Record<ColumnType, number> = {
-  hold: TaskStatusCodes.HOLD,
-  todo: TaskStatusCodes.TODO,
-  inProgress: TaskStatusCodes.IN_PROGRESS,
-  done: TaskStatusCodes.DONE,
+  hold: TaskStatus.HOLD.code,
+  todo: TaskStatus.TODO.code,
+  inProgress: TaskStatus.IN_PROGRESS.code,
+  done: TaskStatus.DONE.code,
 };
 
 export default function TaskBoard() {
@@ -253,44 +253,44 @@ export default function TaskBoard() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Column
                 id="hold"
-                title="Hold"
+                title={TaskStatus.HOLD.label}
                 icon="📋"
                 tasks={getTasksByColumn("hold")}
                 onTaskClick={handleTaskClick}
-                onAddTask={() => handleAddTask(TaskStatusCodes.HOLD)}
+                onAddTask={() => handleAddTask(TaskStatus.HOLD.code)}
                 showAddButton={permissions.canCreateTask(
                   selectedProject,
-                  TaskStatusCodes.HOLD
+                  TaskStatus.HOLD.code
                 )}
                 canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
               <Column
                 id="todo"
-                title="To Do"
+                title={TaskStatus.TODO.label}
                 icon="📝"
                 tasks={getTasksByColumn("todo")}
                 onTaskClick={handleTaskClick}
-                onAddTask={() => handleAddTask(TaskStatusCodes.TODO)}
+                onAddTask={() => handleAddTask(TaskStatus.TODO.code)}
                 showAddButton={canCreateAnyStatus}
                 canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
               <Column
                 id="inProgress"
-                title="In Progress"
+                title={TaskStatus.IN_PROGRESS.label}
                 icon="⚙️"
                 tasks={getTasksByColumn("inProgress")}
                 onTaskClick={handleTaskClick}
-                onAddTask={() => handleAddTask(TaskStatusCodes.IN_PROGRESS)}
+                onAddTask={() => handleAddTask(TaskStatus.IN_PROGRESS.code)}
                 showAddButton={canCreateAnyStatus}
                 canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />
               <Column
                 id="done"
-                title="Done"
+                title={TaskStatus.DONE.label}
                 icon="✅"
                 tasks={getTasksByColumn("done")}
                 onTaskClick={handleTaskClick}
-                onAddTask={() => handleAddTask(TaskStatusCodes.DONE)}
+                onAddTask={() => handleAddTask(TaskStatus.DONE.code)}
                 showAddButton={canCreateAnyStatus}
                 canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
               />

@@ -19,7 +19,7 @@ import { Edit, Copy, Upload, Download, Save, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import type { TaskWithComments } from "@/types/entities";
-import { TaskStatusCodes } from "@/types/entities";
+import { TaskStatus, TaskType } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface TaskDetailDialogProps {
@@ -43,7 +43,7 @@ export function TaskDetailDialog({
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
-  const [editedStatusCode, setEditedStatusCode] = useState<number>(TaskStatusCodes.TODO);
+  const [editedStatusCode, setEditedStatusCode] = useState<number>(TaskStatus.TODO.code);
   const [editedAssignedTo, setEditedAssignedTo] = useState<string>("");
   const [editedDeadline, setEditedDeadline] = useState("");
   const [comment, setComment] = useState("");
@@ -128,6 +128,12 @@ export function TaskDetailDialog({
     return `${firstname[0]}${lastname[0]}`.toUpperCase();
   };
 
+  const getTaskTypeLabel = (typeCode?: number) => {
+    if (!typeCode) return "";
+    const taskType = Object.values(TaskType).find(t => t.code === typeCode);
+    return taskType?.label || "";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] sm:max-w-[90vw] max-h-[90vh] overflow-y-auto">
@@ -149,15 +155,17 @@ export function TaskDetailDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={TaskStatusCodes.HOLD.toString()}>Hold</SelectItem>
-                  <SelectItem value={TaskStatusCodes.TODO.toString()}>To do</SelectItem>
-                  <SelectItem value={TaskStatusCodes.IN_PROGRESS.toString()}>進行中</SelectItem>
-                  <SelectItem value={TaskStatusCodes.DONE.toString()}>完了</SelectItem>
+                  <SelectItem value={TaskStatus.HOLD.code.toString()}>{TaskStatus.HOLD.label}</SelectItem>
+                  <SelectItem value={TaskStatus.TODO.code.toString()}>{TaskStatus.TODO.label}</SelectItem>
+                  <SelectItem value={TaskStatus.IN_PROGRESS.code.toString()}>{TaskStatus.IN_PROGRESS.label}</SelectItem>
+                  <SelectItem value={TaskStatus.DONE.code.toString()}>{TaskStatus.DONE.label}</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" className="bg-green-50 text-green-700">
-                承認
-              </Button>
+              {task.typeCode && (
+                <div className="px-3 py-1 text-sm bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+                  {getTaskTypeLabel(task.typeCode)}
+                </div>
+              )}
               <div className="ml-auto flex gap-2">
                 {canEdit && !isEditMode && (
                   <Button variant="ghost" size="icon" onClick={() => setIsEditMode(true)}>

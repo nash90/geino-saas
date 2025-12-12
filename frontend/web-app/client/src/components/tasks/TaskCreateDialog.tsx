@@ -16,11 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, Plus, X, Calendar as CalendarIcon } from "lucide-react";
+import { Upload, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import type { CreateTaskRequest } from "@/types/api";
-import { TaskStatusCodes } from "@/types/entities";
+import { TaskStatus } from "@/types/entities";
 
 interface TaskCreateDialogProps {
   open: boolean;
@@ -59,7 +59,7 @@ export function TaskCreateDialog({
       const data: CreateTaskRequest = {
         title: title.trim(),
         description: description.trim() || undefined,
-        statusCode: statusCode || TaskStatusCodes.TODO,
+        statusCode: statusCode || TaskStatus.TODO.code,
         typeCode: parseInt(taskType),
         assignedTo: assignedTo || undefined,
         deadline: deadline ? new Date(deadline).toISOString() : undefined,
@@ -168,9 +168,6 @@ export function TaskCreateDialog({
                 onClick={() => setDeadline("")}
               >
                 <X className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <CalendarIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>

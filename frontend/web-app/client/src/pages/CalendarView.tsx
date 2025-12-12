@@ -8,7 +8,7 @@ import { tasksApi } from "@/api/tasks";
 import { projectsApi } from "@/api/projects";
 import { toast } from "sonner";
 import type { TaskWithDetails, ProjectWithMembers } from "@/types/entities";
-import { TaskStatusCodes } from "@/types/entities";
+import { TaskStatus } from "@/types/entities";
 import { CalendarGrid, CalendarTaskList, TaskDetailDialog } from "@/components/tasks";
 
 interface CalendarTask {
@@ -140,7 +140,7 @@ export default function CalendarView() {
 
   // Calculate progress based on all tasks
   const allTasks = calendarTasks.flatMap((ct) => ct.tasks);
-  const completedTasks = allTasks.filter((t) => t.statusCode === TaskStatusCodes.DONE).length;
+  const completedTasks = allTasks.filter((t) => t.statusCode === TaskStatus.DONE.code).length;
   const totalTasks = allTasks.length;
   const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
