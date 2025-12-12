@@ -2,6 +2,7 @@ import { BaseOrganizationService } from './BaseOrganizationService';
 import { organizationMembers, users } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { ServiceResponse, AddMemberData } from '../../types';
+import { OrganizationRole } from '../../types/codeTypes';
 
 /**
  * Organization Member Service
@@ -152,7 +153,7 @@ export class OrganizationMemberService extends BaseOrganizationService {
           and(
             eq(organizationMembers.organizationId, organizationId),
             eq(organizationMembers.userId, userId),
-            eq(organizationMembers.organizationRoleCode, 1) // 1 = organization_manager
+            eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
           )
         )
         .limit(1);

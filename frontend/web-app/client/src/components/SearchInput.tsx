@@ -9,6 +9,7 @@ interface SearchInputProps {
   placeholder?: string;
   onSearch?: (value: string) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ export function SearchInput({
   placeholder = '検索...',
   onSearch,
   className = '',
+  disabled = false,
 }: SearchInputProps) {
   const [internalValue, setInternalValue] = useState(value);
 
@@ -70,8 +72,9 @@ export function SearchInput({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           className="pl-9 pr-9"
+          disabled={disabled}
         />
-        {internalValue && (
+        {internalValue && !disabled && (
           <button
             onClick={handleClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -87,6 +90,7 @@ export function SearchInput({
         variant="default"
         className="flex-shrink-0"
         type="button"
+        disabled={disabled}
       >
         <Search className="w-4 h-4 mr-2" />
         検索

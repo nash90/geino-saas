@@ -1,6 +1,6 @@
 import { BaseOrganizationService } from './BaseOrganizationService';
 import { organizations, organizationMembers, users } from '../../db/schema';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and } from 'drizzle-orm';
 import type {
   ServiceResponse,
   PaginationParams,
@@ -120,8 +120,10 @@ export class OrganizationQueryService extends BaseOrganizationService {
           .select()
           .from(organizationMembers)
           .where(
-            eq(organizationMembers.organizationId, organizationId) &&
-            eq(organizationMembers.userId, userId)
+            and(
+              eq(organizationMembers.organizationId, organizationId),
+              eq(organizationMembers.userId, userId)
+            )
           )
           .limit(1);
 

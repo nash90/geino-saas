@@ -105,4 +105,6 @@ temp/
 *.sqlite
 *.sqlite3
 
+# Coding guidelines for AI assistants (not committed to repo)
+claude.md
 docs/coding-guide.md

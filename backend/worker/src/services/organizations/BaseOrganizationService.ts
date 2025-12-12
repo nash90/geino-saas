@@ -2,7 +2,7 @@ import { BaseService } from '../base/BaseService';
 import { ValidationService } from '../validation/ValidationService';
 import type { DbClient } from '../../db/client';
 import type { Env } from '../../types';
-import { VALID_ORGANIZATION_ROLE_CODES } from '../../types/organizationTypes';
+import { VALID_ORGANIZATION_ROLE_CODES } from '../../types/codeTypes';
 
 /**
  * Base Organization Service

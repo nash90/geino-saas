@@ -7,3 +7,4 @@ export * from './contextTypes';
 export * from './authTypes';
 export * from './serviceTypes';
 export * from './organizationTypes';
+export * from './codeTypes';

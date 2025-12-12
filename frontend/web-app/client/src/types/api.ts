@@ -45,3 +45,32 @@ export interface AddMemberRequest {
   userId: string;
   organizationRoleCode?: number; // Defaults to 1 (organization_manager)
 }
+
+// ============================================================================
+// Project API Types
+// ============================================================================
+
+export interface CreateProjectRequest {
+  organizationId: string;
+  name: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  members?: Array<{
+    userId: string;
+    projectRoleCode: number; // 1=project_manager, 2=geino_user, 3=genba_user
+  }>;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  statusCode?: number; // 1=active, 2=completed, 3=archived
+}
+
+export interface AddProjectMemberRequest {
+  userId: string;
+  projectRoleCode: number; // 1=project_manager, 2=geino_user, 3=genba_user
+}

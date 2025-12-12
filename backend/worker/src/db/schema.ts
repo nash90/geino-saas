@@ -39,3 +39,31 @@ export const organizationMembers = pgTable('organization_members', {
   index('idx_org_members_user_id').on(table.userId),
   unique('unique_org_user').on(table.organizationId, table.userId),
 ]);
+
+export const projects = pgTable('projects', {
+  id: uuid().primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  name: varchar({ length: 255 }).notNull(),
+  description: text(),
+  startDate: timestamp('start_date', { mode: 'date' }),
+  endDate: timestamp('end_date', { mode: 'date' }),
+  statusCode: integer('status_code').default(1).notNull(), // 1: active, 2: completed, 3: archived
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+  updatedAt: timestamp('updated_at').default(sql`now()`).notNull(),
+}, (table) => [
+  index('idx_projects_org_id').on(table.organizationId),
+  index('idx_projects_status_code').on(table.statusCode),
+]);
+
+export const projectMembers = pgTable('project_members', {
+  id: uuid().primaryKey().defaultRandom(),
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  projectRoleCode: integer('project_role_code').notNull(), // 1: project_manager, 2: geino_user, 3: genba_user
+  createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+}, (table) => [
+  index('idx_project_members_project_id').on(table.projectId),
+  index('idx_project_members_user_id').on(table.userId),
+  unique('unique_project_user').on(table.projectId, table.userId),
+]);

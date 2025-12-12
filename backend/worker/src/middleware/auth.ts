@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema';
-import type { OptionalAuthContext, AuthUser } from '../types';
+import type { OptionalAuthContext, AuthContext, AuthUser } from '../types';
+import { SystemRole } from '../types/codeTypes';
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -54,7 +55,7 @@ export function requireSystemAdmin() {
   return async (c: OptionalAuthContext, next: () => Promise<void>) => {
     const user = c.get('user');
     
-    if (!user || user.systemRoleCode !== 1) {
+    if (!user || user.systemRoleCode !== SystemRole.SYSTEM_ADMIN.code) {
       return c.json({ error: 'Forbidden: System Admin access required' }, 403);
     }
     
