@@ -52,12 +52,12 @@
 	 * Create bucket in client's account first:
 	 * wrangler r2 bucket create geino-saas-prod-uploads
 	 */
-	// "r2_buckets": [
-	// 	{
-	// 		"binding": "R2_BUCKET",
-	// 		"bucket_name": "geino-saas-prod-uploads"
-	// 	}
-	// ],
+	"r2_buckets": [
+		{
+			"binding": "ATTACHMENTS_BUCKET",
+			"bucket_name": "geino-saas-prod-uploads"
+		}
+	],
 
 	/**
 	 * Secrets (Set via CLI in CLIENT'S account)

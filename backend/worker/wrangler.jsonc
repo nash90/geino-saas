@@ -18,7 +18,19 @@
 	 */
 	"vars": {
 		"APP_URL": "http://localhost:3000"
-	}
+	},
+	/**
+	 * R2 Buckets
+	 * Using staging bucket for development to avoid managing separate dev bucket
+	 */
+	"r2_buckets": [
+		{
+			"binding": "ATTACHMENTS_BUCKET",
+			"bucket_name": "geino-saas-staging-uploads",
+			"preview_bucket_name": "geino-saas-staging-uploads",
+			"remote": true
+		}
+	],
 	/**
 	 * Secrets (use wrangler secret put for sensitive values):
 	 * - SUPABASE_URL

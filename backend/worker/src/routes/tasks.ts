@@ -59,10 +59,10 @@ tasksRoute.delete('/comments/:commentId', deleteCommentHandler); // Delete comme
 // Calendar view
 tasksRoute.get('/calendar/tasks', getCalendarTasksHandler); // Get tasks grouped by date
 
-// File upload operations
-tasksRoute.post('/uploads/generate-upload-url', generateUploadUrlHandler); // Generate R2 signed upload URL
-tasksRoute.post('/uploads/confirm', confirmUploadHandler); // Confirm upload and create attachment record
-tasksRoute.get('/uploads/:attachmentId/download-url', getDownloadUrlHandler); // Get R2 signed download URL
+// File upload operations (three-step process with pre-signed URLs)
+tasksRoute.post('/uploads/generate-upload-url', generateUploadUrlHandler); // Step 1: Generate R2 pre-signed upload URL
+tasksRoute.post('/uploads/confirm', confirmUploadHandler); // Step 3: Confirm upload and create attachment record
+tasksRoute.get('/uploads/:attachmentId/download-url', getDownloadUrlHandler); // Get R2 pre-signed download URL
 tasksRoute.delete('/uploads/:attachmentId', deleteAttachmentHandler); // Delete attachment (owner or PM+)
 
 export default tasksRoute;

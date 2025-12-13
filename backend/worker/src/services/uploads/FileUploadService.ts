@@ -1,8 +1,10 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { DbClient } from '../../db/client';
 import type { Env, ServiceResponse } from '../../types';
-import { attachments, tasks, taskComments } from '../../db/schema';
-import type { Attachment, NewAttachment } from '../../types/models';
+import { attachments, taskComments } from '../../db/schema';
+import type { Attachment } from '../../types/models';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export interface GenerateUploadUrlData {
   fileName: string;
@@ -28,18 +30,40 @@ export class FileUploadService {
   protected db: DbClient;
   protected env: Env;
 
-  // Maximum file size: 10MB
-  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024;
+  // Maximum file size: 25MB
+  private readonly MAX_FILE_SIZE = 25 * 1024 * 1024;
 
   // Allowed MIME types
   private readonly ALLOWED_MIME_TYPES = [
+    // Images
     'image/jpeg',
+    'image/jpg',
     'image/png',
     'image/gif',
+    'image/bmp',
+    'image/tiff',
     'image/webp',
+    'image/heic',
+    // Audio
+    'audio/wav',
+    'audio/x-wav',
+    'audio/midi',
+    'audio/x-midi',
+    'audio/mpeg',
+    'audio/mp3',
+    // Video
+    'video/mpeg',
+    'video/mp4',
+    'video/quicktime',
+    // Documents
+    'application/msword', // .doc
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    'application/vnd.ms-excel', // .xls
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    'application/vnd.ms-powerpoint', // .ppt
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+    'text/csv',
     'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   ];
 
   constructor(db: DbClient, env: Env) {
@@ -47,17 +71,19 @@ export class FileUploadService {
     this.env = env;
   }
 
+
+
   /**
    * Generate signed upload URL for R2
+   * Note: Permission checks are done in the handler layer
    */
   async generateUploadUrl(
-    userId: string,
     data: GenerateUploadUrlData
   ): Promise<ServiceResponse<GenerateUploadUrlResponse>> {
     try {
       // Validate file size
       if (data.fileSize > this.MAX_FILE_SIZE) {
-        return this.error('File size exceeds 10MB limit', 'FILE_TOO_LARGE');
+        return this.error('File size exceeds 25MB limit', 'FILE_TOO_LARGE');
       }
 
       // Validate MIME type
@@ -68,60 +94,6 @@ export class FileUploadService {
       // Validate that either taskId or commentId is provided
       if (!data.taskId && !data.commentId) {
         return this.error('Either taskId or commentId must be provided', 'INVALID_INPUT');
-      }
-
-      // Validate user has access to the task
-      if (data.taskId) {
-        const task = await this.db.query.tasks.findFirst({
-          where: eq(tasks.id, data.taskId),
-        });
-
-        if (!task) {
-          return this.error('Task not found', 'NOT_FOUND');
-        }
-
-        // Check if user is a member of the task's project
-        const projectMember = await this.db.query.projectMembers.findFirst({
-          where: and(
-            sql`project_id = ${task.projectId}`,
-            sql`user_id = ${userId}`
-          ),
-        });
-
-        if (!projectMember) {
-          return this.error('You do not have access to this task', 'FORBIDDEN');
-        }
-      }
-
-      // Validate comment exists and user has access
-      if (data.commentId) {
-        const comment = await this.db.query.taskComments.findFirst({
-          where: eq(taskComments.id, data.commentId),
-        });
-
-        if (!comment) {
-          return this.error('Comment not found', 'NOT_FOUND');
-        }
-
-        // Check if user has access to the comment's task
-        const task = await this.db.query.tasks.findFirst({
-          where: eq(tasks.id, comment.taskId),
-        });
-
-        if (!task) {
-          return this.error('Task not found', 'NOT_FOUND');
-        }
-
-        const projectMember = await this.db.query.projectMembers.findFirst({
-          where: and(
-            sql`project_id = ${task.projectId}`,
-            sql`user_id = ${userId}`
-          ),
-        });
-
-        if (!projectMember) {
-          return this.error('You do not have access to this task', 'FORBIDDEN');
-        }
       }
 
       // Generate unique file key
@@ -204,62 +176,16 @@ export class FileUploadService {
 
   /**
    * Generate download URL for attachment
+   * Note: Permission checks are done in the handler layer
    */
   async generateDownloadUrl(
-    userId: string,
-    attachmentId: string
+    fileUrl: string
   ): Promise<ServiceResponse<{ downloadUrl: string }>> {
     try {
-      // Fetch attachment
-      const attachment = await this.db.query.attachments.findFirst({
-        where: eq(attachments.id, attachmentId),
-      });
-
-      if (!attachment) {
-        return this.error('Attachment not found', 'NOT_FOUND');
-      }
-
-      // Determine task ID from attachment
-      let taskId: string | null = null;
-      if (attachment.taskId) {
-        taskId = attachment.taskId;
-      } else if (attachment.commentId) {
-        const comment = await this.db.query.taskComments.findFirst({
-          where: eq(taskComments.id, attachment.commentId),
-        });
-        if (comment) {
-          taskId = comment.taskId;
-        }
-      }
-
-      if (!taskId) {
-        return this.error('Cannot determine task for attachment', 'INVALID_STATE');
-      }
-
-      // Verify user has access to the task
-      const task = await this.db.query.tasks.findFirst({
-        where: eq(tasks.id, taskId),
-      });
-
-      if (!task) {
-        return this.error('Task not found', 'NOT_FOUND');
-      }
-
-      const projectMember = await this.db.query.projectMembers.findFirst({
-        where: and(
-          sql`project_id = ${task.projectId}`,
-          sql`user_id = ${userId}`
-        ),
-      });
-
-      if (!projectMember) {
-        return this.error('You do not have access to this attachment', 'FORBIDDEN');
-      }
-
       // Generate R2 signed URL for download (GET method, 1-hour expiration)
       const downloadUrl = await this.generateR2SignedUrl(
         this.env.ATTACHMENTS_BUCKET,
-        attachment.fileUrl,
+        fileUrl,
         'GET',
         3600 // 1 hour
       );
@@ -272,65 +198,15 @@ export class FileUploadService {
 
   /**
    * Delete attachment
+   * Note: Permission checks are done in the handler layer
    */
   async deleteAttachment(
-    userId: string,
-    attachmentId: string
+    attachmentId: string,
+    fileUrl: string
   ): Promise<ServiceResponse<void>> {
     try {
-      // Fetch attachment
-      const attachment = await this.db.query.attachments.findFirst({
-        where: eq(attachments.id, attachmentId),
-      });
-
-      if (!attachment) {
-        return this.error('Attachment not found', 'NOT_FOUND');
-      }
-
-      // Check if user is the uploader or a Project Manager
-      const isUploader = attachment.uploadedBy === userId;
-
-      if (!isUploader) {
-        // Determine task ID
-        let taskId: string | null = null;
-        if (attachment.taskId) {
-          taskId = attachment.taskId;
-        } else if (attachment.commentId) {
-          const comment = await this.db.query.taskComments.findFirst({
-            where: eq(taskComments.id, attachment.commentId),
-          });
-          if (comment) {
-            taskId = comment.taskId;
-          }
-        }
-
-        if (!taskId) {
-          return this.error('Cannot determine task for attachment', 'INVALID_STATE');
-        }
-
-        // Check if user is a Project Manager
-        const task = await this.db.query.tasks.findFirst({
-          where: eq(tasks.id, taskId),
-        });
-
-        if (!task) {
-          return this.error('Task not found', 'NOT_FOUND');
-        }
-
-        const projectMember = await this.db.query.projectMembers.findFirst({
-          where: and(
-            sql`project_id = ${task.projectId}`,
-            sql`user_id = ${userId}`
-          ),
-        });
-
-        if (!projectMember || projectMember.projectRoleCode !== 1) {
-          return this.error('Only the uploader or Project Managers can delete attachments', 'FORBIDDEN');
-        }
-      }
-
       // Delete from R2
-      await this.env.ATTACHMENTS_BUCKET.delete(attachment.fileUrl);
+      await this.env.ATTACHMENTS_BUCKET.delete(fileUrl);
 
       // Delete from database
       await this.db.delete(attachments).where(eq(attachments.id, attachmentId));
@@ -349,8 +225,8 @@ export class FileUploadService {
   }
 
   /**
-   * Generate R2 signed URL
-   * Note: R2 uses AWS S3-compatible API for signed URLs
+   * Generate R2 pre-signed URL using AWS S3-compatible API
+   * R2 is fully S3-compatible for pre-signed URLs
    */
   private async generateR2SignedUrl(
     bucket: R2Bucket,
@@ -358,14 +234,54 @@ export class FileUploadService {
     method: 'PUT' | 'GET',
     expiresIn: number
   ): Promise<string> {
-    // Generate signed URL using R2's httpMetadata
-    // This is a simplified implementation - you may need to adjust based on Cloudflare's R2 API
-    const url = await bucket.createMultipartUpload(key);
+    // Check if R2 credentials are configured
+    if (!this.env.R2_ACCOUNT_ID || !this.env.R2_ACCESS_KEY_ID || !this.env.R2_SECRET_ACCESS_KEY || !this.env.R2_BUCKET_NAME) {
+      throw new Error(
+        'R2 credentials not configured. Please set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME in your environment variables.'
+      );
+    }
 
-    // For now, return a placeholder URL structure
-    // In production, you'll need to implement proper signed URL generation
-    // using Cloudflare's R2 API or AWS S3-compatible signing
-    return `https://r2-signed-url.example.com/${key}?method=${method}&expires=${expiresIn}`;
+    // Create S3 client for R2
+    // R2 endpoint format: https://<accountId>.r2.cloudflarestorage.com
+    const s3Client = new S3Client({
+      region: 'auto', // R2 uses 'auto' as region
+      endpoint: `https://${this.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: this.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: this.env.R2_SECRET_ACCESS_KEY,
+      },
+    });
+
+    try {
+      if (method === 'PUT') {
+        // Generate pre-signed PUT URL for upload
+        const command = new PutObjectCommand({
+          Bucket: this.env.R2_BUCKET_NAME,
+          Key: key,
+        });
+
+        const signedUrl = await getSignedUrl(s3Client, command, {
+          expiresIn, // seconds
+        });
+
+        return signedUrl;
+      } else {
+        // Generate pre-signed GET URL for download
+        const command = new GetObjectCommand({
+          Bucket: this.env.R2_BUCKET_NAME,
+          Key: key,
+        });
+
+        const signedUrl = await getSignedUrl(s3Client, command, {
+          expiresIn, // seconds
+        });
+
+        return signedUrl;
+      }
+    } catch (error) {
+      console.error('[generateR2SignedUrl] Error:', error);
+      throw new Error(`Failed to generate R2 signed URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
