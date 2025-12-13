@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Copy, Upload, Download, Save, X as XIcon } from "lucide-react";
+import { Edit, Copy, Save, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import type { TaskWithComments, TaskCommentWithUser } from "@/types/entities";
@@ -23,6 +23,8 @@ import { TaskStatus, TaskType } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
 import { CommentList } from "./CommentList";
 import { CommentInput } from "./CommentInput";
+import { AttachmentUpload } from "./AttachmentUpload";
+import { AttachmentList } from "./AttachmentList";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface TaskDetailDialogProps {
@@ -296,17 +298,26 @@ export function TaskDetailDialog({
             )}
 
             <div>
-              <h4 className="font-bold mb-2">画像</h4>
-              <div className="bg-gray-200 rounded-lg p-8 flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <div className="text-4xl mb-2">🖼️</div>
-                  <p className="text-sm">画像プレビュー</p>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-bold">添付ファイル</h4>
+                <AttachmentUpload
+                  taskId={task.id}
+                  onUploadComplete={onTaskUpdated}
+                  buttonText="ファイル追加"
+                  buttonVariant="outline"
+                />
               </div>
-              <Button variant="link" className="mt-2">
-                <Download className="h-4 w-4 mr-2" />
-                ダウンロード
-              </Button>
+              {task.attachments && task.attachments.length > 0 ? (
+                <AttachmentList
+                  attachments={task.attachments}
+                  onDelete={async () => {
+                    onTaskUpdated();
+                  }}
+                  canDelete={canEdit}
+                />
+              ) : (
+                <p className="text-sm text-gray-500">添付ファイルなし</p>
+              )}
             </div>
           </div>
 

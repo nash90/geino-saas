@@ -36,9 +36,10 @@ export function CommentInput({
 
     setSubmitting(true);
     try {
-      // Create comment
+      // Create comment with attachments
       await tasksApi.addComment(taskId, {
         content: content.trim() || "(ファイルのみ)",
+        attachmentIds: pendingAttachments.map((a) => a.id),
       });
 
       // Clear form

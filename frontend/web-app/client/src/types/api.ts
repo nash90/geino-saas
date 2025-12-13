@@ -116,6 +116,7 @@ export interface UpdateTaskStatusRequest {
 
 export interface CreateCommentRequest {
   content: string;
+  attachmentIds?: string[];
 }
 
 export interface UpdateCommentRequest {

@@ -87,7 +87,8 @@ export class TaskCommentService extends BaseTaskService {
   async addComment(
     taskId: string,
     userId: string,
-    content: string
+    content: string,
+    attachmentIds?: string[]
   ): Promise<ServiceResponse<TaskComment>> {
     try {
       // Validate task ID
@@ -115,6 +116,14 @@ export class TaskCommentService extends BaseTaskService {
           content: content.trim(),
         })
         .returning();
+
+      // Link attachments to this comment if provided
+      if (attachmentIds && attachmentIds.length > 0) {
+        await this.db
+          .update(attachments)
+          .set({ commentId: comment.id })
+          .where(inArray(attachments.id, attachmentIds));
+      }
 
       // TODO: US-20 - Emit 'comment.created' event to Cloudflare Queue
       // Parse content for @mentions and notify mentioned users

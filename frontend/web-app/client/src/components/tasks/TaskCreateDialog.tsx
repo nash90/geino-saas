@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import type { CreateTaskRequest } from "@/types/api";
@@ -39,7 +39,6 @@ export function TaskCreateDialog({
   statusCode,
   projectMembers,
   onTaskCreated,
-  canCreateAnyStatus,
 }: TaskCreateDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -145,12 +144,7 @@ export function TaskCreateDialog({
             />
           </div>
 
-          <div>
-            <Button variant="outline" className="w-full">
-              <Upload className="h-4 w-4 mr-2" />
-              アップロード
-            </Button>
-          </div>
+          {/* File upload will be available after task creation in the detail view */}
 
           <div>
             <Label>期限設定</Label>
