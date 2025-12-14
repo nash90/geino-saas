@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AttachmentList } from "./AttachmentList";
 import { uploadsApi } from "@/api/uploads";
 import { toast } from "sonner";
 import { formatMentionsForDisplay } from "@/lib/mentionUtils";
@@ -75,22 +74,13 @@ export function CommentList({
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "たった今";
-    if (diffMins < 60) return `${diffMins}分前`;
-    if (diffHours < 24) return `${diffHours}時間前`;
-    if (diffDays < 7) return `${diffDays}日前`;
-
-    return date.toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const getInitials = (firstname: string, lastname: string) => {
@@ -105,51 +95,51 @@ export function CommentList({
             canDeleteAny || comment.userId === currentUserId;
 
           return (
-            <div key={comment.id} className="flex gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white text-sm flex items-center justify-center font-medium">
+            <div key={comment.id} className="border-b pb-3">
+              {/* Timestamp at top */}
+              <div className="text-xs text-gray-500 mb-1">{formatTimestamp(comment.createdAt)}</div>
+
+              {/* Avatar and content */}
+              <div className="flex items-start gap-2">
+                <div className="w-8 h-8 rounded-full bg-orange-500 text-white text-sm flex items-center justify-center font-medium flex-shrink-0">
                   {getInitials(comment.user.firstname, comment.user.lastname)}
                 </div>
-              </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div>
-                      <p className="font-medium text-sm text-gray-900">
-                        {comment.user.firstname} {comment.user.lastname}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatTimestamp(comment.createdAt)}
-                      </p>
-                    </div>
-
-                    {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteClick(comment.id)}
-                        disabled={deleting}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                <div className="flex-1">
+                  {/* Comment text */}
+                  <p className="text-sm whitespace-pre-wrap break-words">
                     {formatMentionsForDisplay(comment.content)}
                   </p>
+
+                  {/* Attachments as link buttons */}
+                  {comment.attachments && comment.attachments.length > 0 && (
+                    <div className="mt-1">
+                      {comment.attachments.map((attachment) => (
+                        <Button
+                          key={attachment.id}
+                          variant="link"
+                          size="sm"
+                          className="p-0 h-auto text-xs"
+                          onClick={() => uploadsApi.downloadAttachment(attachment.id, attachment.fileName)}
+                        >
+                          {attachment.fileName}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {comment.attachments && comment.attachments.length > 0 && (
-                  <div className="mt-2">
-                    <AttachmentList
-                      attachments={comment.attachments}
-                      onDelete={handleDeleteAttachment}
-                      canDelete={canDelete}
-                    />
-                  </div>
+                {/* Delete button */}
+                {canDelete && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteClick(comment.id)}
+                    disabled={deleting}
+                    className="h-6 w-6 p-0 flex-shrink-0"
+                  >
+                    <Trash2 className="h-3 w-3 text-gray-400 hover:text-red-600" />
+                  </Button>
                 )}
               </div>
             </div>

@@ -75,55 +75,40 @@ export function CommentInput({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
+      {/* Comment textarea - full width */}
       <div onKeyDown={handleKeyDown}>
         <MentionTextarea
           value={content}
           onChange={setContent}
-          placeholder="@メンションでユーザーを指定できます"
+          placeholder="@コメント入力"
           rows={3}
           projectMembers={projectMembers}
           disabled={submitting}
         />
       </div>
 
+      {/* Pending attachments */}
       {pendingAttachments.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">添付ファイル:</p>
-          <AttachmentList
-            attachments={pendingAttachments}
-            onDelete={handleRemovePendingAttachment}
-            canDelete={true}
-          />
-        </div>
+        <AttachmentList
+          attachments={pendingAttachments}
+          onDelete={handleRemovePendingAttachment}
+          canDelete={true}
+        />
       )}
 
-      <div className="flex items-center gap-2">
+      {/* Upload and Send buttons */}
+      <div className="flex gap-2">
         <AttachmentUpload
           taskId={taskId}
           onUploadComplete={handleAttachmentUpload}
-          buttonText="ファイル添付"
+          buttonText="アップロード"
           buttonVariant="outline"
         />
-
         <Button onClick={handleSubmit} disabled={submitting}>
           {submitting ? "送信中..." : "送信"}
         </Button>
-
-        {content && !submitting && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setContent("")}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
       </div>
-
-      <p className="text-xs text-gray-500">
-        Ctrl+Enterで送信
-      </p>
     </div>
   );
 }

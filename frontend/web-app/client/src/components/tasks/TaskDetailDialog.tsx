@@ -24,7 +24,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { CommentList } from "./CommentList";
 import { CommentInput } from "./CommentInput";
 import { AttachmentUpload } from "./AttachmentUpload";
-import { AttachmentList } from "./AttachmentList";
+import { FilePreview } from "./FilePreview";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface TaskDetailDialogProps {
@@ -299,7 +299,7 @@ export function TaskDetailDialog({
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-bold">添付ファイル</h4>
+                <h4 className="font-bold">画像</h4>
                 <AttachmentUpload
                   taskId={task.id}
                   onUploadComplete={onTaskUpdated}
@@ -307,17 +307,13 @@ export function TaskDetailDialog({
                   buttonVariant="outline"
                 />
               </div>
-              {task.attachments && task.attachments.length > 0 ? (
-                <AttachmentList
-                  attachments={task.attachments}
-                  onDelete={async () => {
-                    onTaskUpdated();
-                  }}
-                  canDelete={canEdit}
-                />
-              ) : (
-                <p className="text-sm text-gray-500">添付ファイルなし</p>
-              )}
+              <FilePreview
+                attachments={task.attachments || []}
+                onDelete={async () => {
+                  onTaskUpdated();
+                }}
+                canDelete={canEdit}
+              />
             </div>
           </div>
 
