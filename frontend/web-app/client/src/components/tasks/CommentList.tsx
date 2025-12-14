@@ -14,6 +14,7 @@ import {
 import { AttachmentList } from "./AttachmentList";
 import { uploadsApi } from "@/api/uploads";
 import { toast } from "sonner";
+import { formatMentionsForDisplay } from "@/lib/mentionUtils";
 import type { TaskCommentWithUser } from "@/types/entities";
 
 interface CommentListProps {
@@ -96,24 +97,6 @@ export function CommentList({
     return `${firstname.charAt(0)}${lastname.charAt(0)}`.toUpperCase();
   };
 
-  const highlightMentions = (content: string) => {
-    // Highlight @mentions in the text
-    const mentionRegex = /@([^\s]+\s+[^\s]+)/g;
-    const parts = content.split(mentionRegex);
-
-    return parts.map((part, index) => {
-      if (index % 2 === 1) {
-        // This is a mention
-        return (
-          <span key={index} className="text-indigo-600 font-medium">
-            @{part}
-          </span>
-        );
-      }
-      return part;
-    });
-  };
-
   return (
     <>
       <div className="space-y-4">
@@ -155,7 +138,7 @@ export function CommentList({
                   </div>
 
                   <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                    {highlightMentions(comment.content)}
+                    {formatMentionsForDisplay(comment.content)}
                   </p>
                 </div>
 
