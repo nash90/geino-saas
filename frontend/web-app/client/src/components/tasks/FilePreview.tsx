@@ -52,6 +52,10 @@ function AttachmentPreview({
 
   // Load image preview if it's an image
   useEffect(() => {
+    // Reset state when attachment changes
+    setPreviewUrl(null);
+    setLoading(false);
+
     if (isImage) {
       setLoading(true);
       uploadsApi
