@@ -34,13 +34,6 @@ export const uploadsApi = {
     onProgress?: (progress: number) => void
   ): Promise<void> => {
     try {
-      console.log('[uploadFile] Starting upload to R2:', {
-        url: uploadUrl,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type
-      });
-
       const response = await axios.put(uploadUrl, file, {
         headers: {
           'Content-Type': file.type,
@@ -57,18 +50,12 @@ export const uploadsApi = {
           : undefined,
       });
 
-      console.log('[uploadFile] Upload completed:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers
-      });
+      // Verify upload was successful
+      if (response.status !== 200) {
+        throw new Error(`Upload failed with status ${response.status}: ${response.statusText}`);
+      }
     } catch (error: any) {
-      console.error('[uploadFile] Upload failed:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      throw error;
+      throw new Error(`Failed to upload file to R2: ${error.message}`);
     }
   },
 

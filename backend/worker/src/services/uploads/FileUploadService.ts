@@ -112,7 +112,15 @@ export class FileUploadService extends BaseFileUploadService {
   ): Promise<ServiceResponse<Attachment>> {
     try {
       // Verify file exists in R2
-      const object = await this.env.ATTACHMENTS_BUCKET.head(fileKey);
+      let object;
+      try {
+        object = await this.env.ATTACHMENTS_BUCKET.head(fileKey);
+      } catch (r2Error: any) {
+        return this.error(
+          `File not found in storage. Upload may have failed. Key: ${fileKey}`,
+          'NOT_FOUND'
+        );
+      }
 
       if (!object) {
         return this.error('File not found in storage', 'NOT_FOUND');
