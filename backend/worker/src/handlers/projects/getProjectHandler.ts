@@ -43,5 +43,5 @@ export async function getProjectHandler(c: AuthContext) {
     profiler.checkpoint('Authorization (skip - admin)');
   }
 
-  return c.json(project);
+  return c.json({ project });
 }
