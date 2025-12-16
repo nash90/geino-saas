@@ -1,0 +1,1 @@
+CREATE INDEX "idx_org_members_manager_lookup" ON "organization_members" USING btree ("organization_id","user_id","organization_role_code");

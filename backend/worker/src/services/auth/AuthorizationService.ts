@@ -2,7 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../../db/client';
 import type { AuthUser } from '../../types';
 import { SystemRole, OrganizationRole, ProjectRole, TaskStatus } from '../../types/codeTypes';
-import { organizationMembers, projects, projectMembers, tasks } from '../../db/schema';
+import { organizationMembers, projects, projectMembers } from '../../db/schema';
 import type { Task } from '../../types/models';
 
 /**
@@ -37,6 +37,8 @@ export class AuthorizationService {
   /**
    * Check if user is Project Manager or above for a specific project
    * Includes: System Admin, Organization Manager of the org, or Project Manager of the project
+   *
+   * Performance: Optimized with single JOIN query - O(log n) complexity
    */
   static async isProjectManagerOrAbove(
     db: DbClient,
@@ -46,34 +48,43 @@ export class AuthorizationService {
     // System Admin has access to everything
     if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) return true;
 
-    // Get project to find its organization
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, projectId)
-    });
-
-    if (!project) return false;
-
-    // Check if user is Organization Manager of the project's organization
-    const orgMember = await db.query.organizationMembers.findFirst({
-      where: and(
-        eq(organizationMembers.organizationId, project.organizationId),
-        eq(organizationMembers.userId, user.id),
-        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+    // Single optimized query with LEFT JOINs
+    const result = await db
+      .select({
+        orgManagerRole: organizationMembers.organizationRoleCode,
+        projectManagerRole: projectMembers.projectRoleCode,
+      })
+      .from(projects)
+      .leftJoin(
+        organizationMembers,
+        and(
+          eq(organizationMembers.organizationId, projects.organizationId),
+          eq(organizationMembers.userId, user.id),
+          eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+        )
       )
-    });
-
-    if (orgMember) return true;
-
-    // Check if user is Project Manager of this project
-    const projectMember = await db.query.projectMembers.findFirst({
-      where: and(
-        eq(projectMembers.projectId, projectId),
-        eq(projectMembers.userId, user.id),
-        eq(projectMembers.projectRoleCode, ProjectRole.PROJECT_MANAGER.code)
+      .leftJoin(
+        projectMembers,
+        and(
+          eq(projectMembers.projectId, projects.id),
+          eq(projectMembers.userId, user.id),
+          eq(projectMembers.projectRoleCode, ProjectRole.PROJECT_MANAGER.code)
+        )
       )
-    });
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
-    return !!projectMember;
+    if (!result || result.length === 0) return false;
+
+    const row = result[0];
+
+    // User is PM or above if they're either:
+    // 1. Organization Manager of the project's org
+    // 2. Project Manager of the project
+    return (
+      row.orgManagerRole === OrganizationRole.ORGANIZATION_MANAGER.code ||
+      row.projectManagerRole === ProjectRole.PROJECT_MANAGER.code
+    );
   }
 
   /**
@@ -83,6 +94,8 @@ export class AuthorizationService {
    * - Project Manager: Can create any task in their projects
    * - Genba User: Can create Hold status tasks only
    * - Geino User: Cannot create tasks
+   *
+   * Performance: Optimized with single JOIN query
    */
   static async canCreateTask(
     db: DbClient,
@@ -93,41 +106,50 @@ export class AuthorizationService {
     // System Admin can create any task
     if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) return true;
 
-    // Get project to find its organization
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, projectId)
-    });
-
-    if (!project) return false;
-
-    // Check if user is Organization Manager
-    const orgMember = await db.query.organizationMembers.findFirst({
-      where: and(
-        eq(organizationMembers.organizationId, project.organizationId),
-        eq(organizationMembers.userId, user.id),
-        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+    // Single optimized query with LEFT JOINs
+    const result = await db
+      .select({
+        orgManagerRole: organizationMembers.organizationRoleCode,
+        projectMemberRole: projectMembers.projectRoleCode,
+      })
+      .from(projects)
+      .leftJoin(
+        organizationMembers,
+        and(
+          eq(organizationMembers.organizationId, projects.organizationId),
+          eq(organizationMembers.userId, user.id),
+          eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+        )
       )
-    });
-
-    if (orgMember) return true;
-
-    // Check project membership
-    const projectMember = await db.query.projectMembers.findFirst({
-      where: and(
-        eq(projectMembers.projectId, projectId),
-        eq(projectMembers.userId, user.id)
+      .leftJoin(
+        projectMembers,
+        and(
+          eq(projectMembers.projectId, projects.id),
+          eq(projectMembers.userId, user.id)
+        )
       )
-    });
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
-    if (!projectMember) return false;
+    if (!result || result.length === 0) return false;
+
+    const row = result[0];
+
+    // Organization Manager can create any task
+    if (row.orgManagerRole === OrganizationRole.ORGANIZATION_MANAGER.code) {
+      return true;
+    }
+
+    // Check project member permissions
+    if (!row.projectMemberRole) return false;
 
     // Project Manager can create any task
-    if (projectMember.projectRoleCode === ProjectRole.PROJECT_MANAGER.code) {
+    if (row.projectMemberRole === ProjectRole.PROJECT_MANAGER.code) {
       return true;
     }
 
     // Genba User can only create Hold status tasks
-    if (projectMember.projectRoleCode === ProjectRole.GENBA_USER.code) {
+    if (row.projectMemberRole === ProjectRole.GENBA_USER.code) {
       return statusCode === TaskStatus.HOLD.code || statusCode === undefined;
     }
 
@@ -142,6 +164,8 @@ export class AuthorizationService {
    * - Project Manager: Can edit any task in their projects
    * - Genba User: Can edit only their own tasks
    * - Geino User: Cannot edit tasks
+   *
+   * Performance: Optimized with single JOIN query
    */
   static async canEditTask(
     db: DbClient,
@@ -151,41 +175,50 @@ export class AuthorizationService {
     // System Admin can edit any task
     if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) return true;
 
-    // Get project to find its organization
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, task.projectId)
-    });
-
-    if (!project) return false;
-
-    // Check if user is Organization Manager
-    const orgMember = await db.query.organizationMembers.findFirst({
-      where: and(
-        eq(organizationMembers.organizationId, project.organizationId),
-        eq(organizationMembers.userId, user.id),
-        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+    // Single optimized query with LEFT JOINs
+    const result = await db
+      .select({
+        orgManagerRole: organizationMembers.organizationRoleCode,
+        projectMemberRole: projectMembers.projectRoleCode,
+      })
+      .from(projects)
+      .leftJoin(
+        organizationMembers,
+        and(
+          eq(organizationMembers.organizationId, projects.organizationId),
+          eq(organizationMembers.userId, user.id),
+          eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+        )
       )
-    });
-
-    if (orgMember) return true;
-
-    // Check project membership
-    const projectMember = await db.query.projectMembers.findFirst({
-      where: and(
-        eq(projectMembers.projectId, task.projectId),
-        eq(projectMembers.userId, user.id)
+      .leftJoin(
+        projectMembers,
+        and(
+          eq(projectMembers.projectId, projects.id),
+          eq(projectMembers.userId, user.id)
+        )
       )
-    });
+      .where(eq(projects.id, task.projectId))
+      .limit(1);
 
-    if (!projectMember) return false;
+    if (!result || result.length === 0) return false;
+
+    const row = result[0];
+
+    // Organization Manager can edit any task
+    if (row.orgManagerRole === OrganizationRole.ORGANIZATION_MANAGER.code) {
+      return true;
+    }
+
+    // Check project member permissions
+    if (!row.projectMemberRole) return false;
 
     // Project Manager can edit any task
-    if (projectMember.projectRoleCode === ProjectRole.PROJECT_MANAGER.code) {
+    if (row.projectMemberRole === ProjectRole.PROJECT_MANAGER.code) {
       return true;
     }
 
     // Genba User can edit only their own tasks
-    if (projectMember.projectRoleCode === ProjectRole.GENBA_USER.code) {
+    if (row.projectMemberRole === ProjectRole.GENBA_USER.code) {
       return task.createdBy === user.id;
     }
 
@@ -196,6 +229,8 @@ export class AuthorizationService {
   /**
    * Check if user can view tasks in a project
    * Any project member can view tasks
+   *
+   * Performance: Optimized with single JOIN query
    */
   static async canViewTask(
     db: DbClient,
@@ -205,32 +240,41 @@ export class AuthorizationService {
     // System Admin can view any task
     if (user.systemRoleCode === SystemRole.SYSTEM_ADMIN.code) return true;
 
-    // Get project to find its organization
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, projectId)
-    });
-
-    if (!project) return false;
-
-    // Check if user is Organization Manager
-    const orgMember = await db.query.organizationMembers.findFirst({
-      where: and(
-        eq(organizationMembers.organizationId, project.organizationId),
-        eq(organizationMembers.userId, user.id),
-        eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+    // Single optimized query with LEFT JOINs
+    const result = await db
+      .select({
+        orgManagerRole: organizationMembers.organizationRoleCode,
+        projectMemberRole: projectMembers.projectRoleCode,
+      })
+      .from(projects)
+      .leftJoin(
+        organizationMembers,
+        and(
+          eq(organizationMembers.organizationId, projects.organizationId),
+          eq(organizationMembers.userId, user.id),
+          eq(organizationMembers.organizationRoleCode, OrganizationRole.ORGANIZATION_MANAGER.code)
+        )
       )
-    });
-
-    if (orgMember) return true;
-
-    // Check if user is a project member (any role)
-    const projectMember = await db.query.projectMembers.findFirst({
-      where: and(
-        eq(projectMembers.projectId, projectId),
-        eq(projectMembers.userId, user.id)
+      .leftJoin(
+        projectMembers,
+        and(
+          eq(projectMembers.projectId, projects.id),
+          eq(projectMembers.userId, user.id)
+        )
       )
-    });
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
-    return !!projectMember;
+    if (!result || result.length === 0) return false;
+
+    const row = result[0];
+
+    // User can view if they're either:
+    // 1. Organization Manager of the project's org
+    // 2. Any project member (any role)
+    return (
+      row.orgManagerRole === OrganizationRole.ORGANIZATION_MANAGER.code ||
+      row.projectMemberRole !== null
+    );
   }
 }

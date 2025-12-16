@@ -37,6 +37,9 @@ export const organizationMembers = pgTable('organization_members', {
 }, (table) => [
   index('idx_org_members_org_id').on(table.organizationId),
   index('idx_org_members_user_id').on(table.userId),
+  // Composite index for optimized organization manager permission checks
+  // Used in JOIN queries: WHERE org_id = X AND user_id = Y AND role_code = 1
+  index('idx_org_members_manager_lookup').on(table.organizationId, table.userId, table.organizationRoleCode),
   unique('unique_org_user').on(table.organizationId, table.userId),
 ]);
 
