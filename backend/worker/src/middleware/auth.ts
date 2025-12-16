@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema';
 import type { OptionalAuthContext, AuthUser } from '../types';
@@ -11,31 +11,6 @@ function getCookieValue(cookieHeader: string | null, name: string): string | nul
   return match ? match[2] : null;
 }
 
-/**
- * Verify Supabase JWT using JWKS (supports ES256, RS256, HS256)
- * Uses Supabase's public keys endpoint for asymmetric verification
- */
-async function verifySupabaseJWT(token: string, supabaseUrl: string): Promise<{ sub: string } | null> {
-  try {
-    // Fetch JWKS from Supabase's well-known endpoint
-    const JWKS = createRemoteJWKSet(
-      new URL(`${supabaseUrl}/auth/v1/.well-known/jwks.json`)
-    );
-
-    // Verify JWT signature and extract payload
-    const { payload } = await jwtVerify(token, JWKS, {
-      issuer: `${supabaseUrl}/auth/v1`,
-      audience: 'authenticated',
-    });
-
-    // Return user ID from token
-    return { sub: payload.sub as string };
-  } catch (error) {
-    console.error('[JWT Verify] Error:', error);
-    return null;
-  }
-}
-
 export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
   const profiler = c.get('profiler') as Profiler;
 
@@ -46,17 +21,23 @@ export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
     throw new Error('Unauthorized: No access token provided');
   }
 
-  // Verify JWT using JWKS (supports ES256/RS256/HS256)
-  const jwtPayload = await verifySupabaseJWT(token, c.env.SUPABASE_URL);
-  profiler.checkpoint('JWT verification (JWKS)');
+  // Use Supabase client to verify token (now fast with Tokyo region)
+  const supabase = createClient(
+    c.env.SUPABASE_URL,
+    c.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false } }
+  );
 
-  if (!jwtPayload || !jwtPayload.sub) {
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  profiler.checkpoint('Supabase auth verification');
+
+  if (error || !user) {
     throw new Error('Unauthorized: Invalid token');
   }
 
   const db = c.get('db');
   const appUser = await db.query.users.findFirst({
-    where: eq(users.id, jwtPayload.sub)
+    where: eq(users.id, user.id)
   });
   profiler.checkpoint('Get User DB query');
 
