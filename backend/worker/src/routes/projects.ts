@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { authenticate } from '../middleware/auth';
-import type { Env, AuthUser } from '../types';
-import type { DbClient } from '../db/client';
+import type { PreAuthEnv } from '../types';
 import { createProjectHandler } from '../handlers/projects/createProjectHandler';
 import { listProjectsHandler } from '../handlers/projects/listProjectsHandler';
 import { getProjectHandler } from '../handlers/projects/getProjectHandler';
@@ -10,7 +9,7 @@ import { deleteProjectHandler } from '../handlers/projects/deleteProjectHandler'
 import { addProjectMemberHandler } from '../handlers/projects/addProjectMemberHandler';
 import { removeProjectMemberHandler } from '../handlers/projects/removeProjectMemberHandler';
 
-const projectsRoute = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
+const projectsRoute = new Hono<PreAuthEnv>();
 
 // Middleware to authenticate all project routes
 projectsRoute.use('*', async (c, next) => {

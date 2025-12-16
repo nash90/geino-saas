@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
-import type { Env, AuthUser } from '../types';
-import type { DbClient } from '../db/client';
+import type { BaseEnv } from '../types';
 import { registerHandler } from '../handlers/auth/registerHandler';
 import { loginHandler } from '../handlers/auth/loginHandler';
 import { logoutHandler } from '../handlers/auth/logoutHandler';
@@ -9,7 +8,7 @@ import { sessionHandler } from '../handlers/auth/sessionHandler';
 import { resetPasswordHandler } from '../handlers/auth/resetPasswordHandler';
 import { updatePasswordHandler } from '../handlers/auth/updatePasswordHandler';
 
-const auth = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
+const auth = new Hono<BaseEnv>();
 
 auth.post('/register', registerHandler);
 auth.post('/login', loginHandler);

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { createDbClient } from './db/client';
+import { Profiler } from './lib/profiler';
 import auth from './routes/auth';
 import users from './routes/users';
 import organizations from './routes/organizations';
@@ -9,7 +10,7 @@ import tasks from './routes/tasks';
 import type { Env } from './types';
 import type { DbClient } from './db/client';
 
-const app = new Hono<{ Bindings: Env; Variables: { db: DbClient } }>();
+const app = new Hono<{ Bindings: Env; Variables: { db: DbClient; profiler: Profiler } }>();
 
 // CORS middleware
 app.use('*', cors({
@@ -36,11 +37,32 @@ app.use('*', cors({
   maxAge: 600,
 }));
 
-// Database middleware - attach db client to context
+// Database middleware - attach db client and profiler to context
 app.use('*', async (c, next) => {
+  // Only profile specific routes
+  const shouldProfile = c.req.path.startsWith('/api/projects');
+  const profiler = new Profiler();
+  
   const db = createDbClient(c.env.DATABASE_URL);
+  profiler.checkpoint('DB client create');
+  
   c.set('db', db);
-  await next();
+  c.set('profiler', profiler);
+
+  try {
+    await next();
+    profiler.checkpoint('Handler execute');
+  } finally {
+    // Close database connection
+    await db.$client?.end?.();
+    profiler.checkpoint('DB close');
+    
+    // Only log profiling for targeted routes
+    if (shouldProfile) {
+      console.log(`\n[${c.req.method} ${c.req.path}]`);
+      console.log(profiler.report());
+    }
+  }
 });
 
 // Health check

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { users } from '../db/schema';
 import type { OptionalAuthContext, AuthContext, AuthUser } from '../types';
 import { SystemRole } from '../types/codeTypes';
+import type { Profiler } from '../lib/profiler';
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -11,6 +12,8 @@ function getCookieValue(cookieHeader: string | null, name: string): string | nul
 }
 
 export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
+  const profiler = c.get('profiler') as Profiler;
+  
   const cookieHeader = c.req.header('Cookie');
   const token = getCookieValue(cookieHeader || null, 'access_token');
   
@@ -25,6 +28,7 @@ export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
   );
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
+  profiler.checkpoint('Supabase auth');
   
   if (error || !user) {
     throw new Error('Unauthorized: Invalid token');
@@ -34,6 +38,7 @@ export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
   const appUser = await db.query.users.findFirst({
     where: eq(users.id, user.id)
   });
+  profiler.checkpoint('Get User DB query');
 
   if (!appUser) {
     throw new Error('User profile not found');
@@ -46,7 +51,7 @@ export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
     lastname: appUser.lastname,
     systemRoleCode: appUser.systemRoleCode,
   };
-
+  
   c.set('user', authUser);
   return authUser;
 }

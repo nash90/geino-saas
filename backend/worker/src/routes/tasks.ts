@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { authenticate } from '../middleware/auth';
-import type { Env, AuthUser } from '../types';
-import type { DbClient } from '../db/client';
+import type { PreAuthEnv } from '../types';
 
 // Task handlers
 import { listTasksHandler } from '../handlers/tasks/listTasksHandler';
@@ -27,7 +26,7 @@ import { confirmUploadHandler } from '../handlers/uploads/confirmUploadHandler';
 import { getDownloadUrlHandler } from '../handlers/uploads/getDownloadUrlHandler';
 import { deleteAttachmentHandler } from '../handlers/uploads/deleteAttachmentHandler';
 
-const tasksRoute = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
+const tasksRoute = new Hono<PreAuthEnv>();
 
 // Middleware to authenticate all task routes
 tasksRoute.use('*', async (c, next) => {

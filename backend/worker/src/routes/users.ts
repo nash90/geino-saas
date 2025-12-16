@@ -1,14 +1,13 @@
 import { Hono } from 'hono';
 import { authenticate, requireSystemAdmin } from '../middleware/auth';
-import type { Env, AuthUser } from '../types';
-import type { DbClient } from '../db/client';
+import type { PreAuthEnv } from '../types';
 import { listUsersHandler } from '../handlers/users/listUsersHandler';
 import { getUserHandler } from '../handlers/users/getUserHandler';
 import { updateUserHandler } from '../handlers/users/updateUserHandler';
 import { deleteUserHandler } from '../handlers/users/deleteUserHandler';
 import { findUserByEmailHandler } from '../handlers/users/findUserByEmailHandler';
 
-const usersRoute = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
+const usersRoute = new Hono<PreAuthEnv>();
 
 // Middleware to authenticate all user routes
 usersRoute.use('*', async (c, next) => {
