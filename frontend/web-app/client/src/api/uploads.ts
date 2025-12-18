@@ -126,17 +126,12 @@ export const uploadsApi = {
 
   /**
    * Download an attachment
-   * Gets the signed URL and triggers download
+   * Gets the signed URL and opens in new tab
    */
   downloadAttachment: async (attachmentId: string, fileName: string): Promise<void> => {
     const downloadUrl = await uploadsApi.getDownloadUrl(attachmentId);
 
-    // Create temporary link and trigger download
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Open in new tab to prevent user from navigating away
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
   },
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import type { TaskCommentWithUser } from "@/types/entities";
 interface CommentListProps {
   comments: TaskCommentWithUser[];
   onDeleteComment: (commentId: string) => Promise<void>;
+  onRefresh?: () => void; // Callback to refresh comments after attachment deletion
   currentUserId: string;
   canDeleteAny: boolean; // PM or above
 }
@@ -26,12 +27,14 @@ interface CommentListProps {
 export function CommentList({
   comments,
   onDeleteComment,
+  onRefresh,
   currentUserId,
   canDeleteAny,
 }: CommentListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deletingAttachment, setDeletingAttachment] = useState<string | null>(null);
 
   if (comments.length === 0) {
     return (
@@ -63,12 +66,18 @@ export function CommentList({
   };
 
   const handleDeleteAttachment = async (attachmentId: string) => {
+    setDeletingAttachment(attachmentId);
     try {
       await uploadsApi.deleteAttachment(attachmentId);
-      // Parent component should refresh comments to reflect deletion
-      return Promise.resolve();
-    } catch (error) {
-      throw error;
+      toast.success("添付ファイルを削除しました");
+      // Refresh comments to reflect deletion
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "削除に失敗しました");
+    } finally {
+      setDeletingAttachment(null);
     }
   };
 
@@ -111,19 +120,31 @@ export function CommentList({
                     {formatMentionsForDisplay(comment.content)}
                   </p>
 
-                  {/* Attachments as link buttons */}
+                  {/* Attachments with inline delete */}
                   {comment.attachments && comment.attachments.length > 0 && (
-                    <div className="mt-1">
+                    <div className="mt-1 space-y-1">
                       {comment.attachments.map((attachment) => (
-                        <Button
-                          key={attachment.id}
-                          variant="link"
-                          size="sm"
-                          className="p-0 h-auto text-xs"
-                          onClick={() => uploadsApi.downloadAttachment(attachment.id, attachment.fileName)}
-                        >
-                          {attachment.fileName}
-                        </Button>
+                        <div key={attachment.id} className="flex items-center gap-1">
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-xs"
+                            onClick={() => uploadsApi.downloadAttachment(attachment.id, attachment.fileName)}
+                          >
+                            {attachment.fileName}
+                          </Button>
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteAttachment(attachment.id)}
+                              disabled={deletingAttachment === attachment.id}
+                              className="h-4 w-4 p-0"
+                            >
+                              <XIcon className="h-3 w-3 text-gray-400 hover:text-red-600" />
+                            </Button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}

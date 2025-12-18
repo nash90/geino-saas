@@ -181,11 +181,34 @@ export class FileUploadService extends BaseFileUploadService {
 
       const attachment = attachmentResult.data!;
 
+      console.log(`[FileUploadService] Deleting attachment ${attachmentId} with fileUrl: ${attachment.fileUrl}`);
+
+      // Check if file exists in R2 before attempting delete
+      try {
+        const object = await this.env.ATTACHMENTS_BUCKET.head(attachment.fileUrl);
+        if (!object) {
+          console.warn(`[FileUploadService] File not found in R2: ${attachment.fileUrl}`);
+        } else {
+          console.log(`[FileUploadService] File exists in R2, proceeding with delete`);
+        }
+      } catch (headError: any) {
+        console.warn(`[FileUploadService] head() failed for ${attachment.fileUrl}:`, headError.message);
+        // Continue with delete anyway - file might not exist
+      }
+
       // Delete from R2
-      await this.env.ATTACHMENTS_BUCKET.delete(attachment.fileUrl);
+      try {
+        await this.env.ATTACHMENTS_BUCKET.delete(attachment.fileUrl);
+        console.log(`[FileUploadService] Successfully deleted from R2: ${attachment.fileUrl}`);
+      } catch (r2Error: any) {
+        console.error(`[FileUploadService] R2 delete failed for ${attachment.fileUrl}:`, r2Error);
+        // Continue to delete from database even if R2 delete fails
+        // This prevents orphaned database records
+      }
 
       // Delete from database
       await this.db.delete(attachments).where(eq(attachments.id, attachmentId));
+      console.log(`[FileUploadService] Successfully deleted from database: ${attachmentId}`);
 
       return this.success(undefined);
     } catch (error) {

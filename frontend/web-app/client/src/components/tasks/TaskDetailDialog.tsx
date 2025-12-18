@@ -18,6 +18,7 @@ import {
 import { Edit, Copy, Save, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
+import { uploadsApi } from "@/api/uploads";
 import type { TaskWithComments, TaskCommentWithUser } from "@/types/entities";
 import { TaskStatus, TaskType } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -309,8 +310,14 @@ export function TaskDetailDialog({
               </div>
               <FilePreview
                 attachments={task.attachments || []}
-                onDelete={async () => {
-                  onTaskUpdated();
+                onDelete={async (attachmentId) => {
+                  try {
+                    await uploadsApi.deleteAttachment(attachmentId);
+                    toast.success("ファイルを削除しました");
+                    onTaskUpdated();
+                  } catch (error: any) {
+                    toast.error(error.response?.data?.error || "削除に失敗しました");
+                  }
                 }}
                 canDelete={canEdit}
               />
@@ -336,6 +343,7 @@ export function TaskDetailDialog({
                 <CommentList
                   comments={comments}
                   onDeleteComment={handleDeleteComment}
+                  onRefresh={fetchComments}
                   currentUserId={user?.id || ""}
                   canDeleteAny={permissions.isProjectManagerOrAbove(task.projectId)}
                 />
