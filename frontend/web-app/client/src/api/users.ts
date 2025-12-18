@@ -23,13 +23,22 @@ export const usersApi = {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
-    
+
     const response = await apiClient.get(`/api/users?${queryParams.toString()}`);
     return response.data;
   },
 
   get: async (id: string): Promise<{ user: User }> => {
     const response = await apiClient.get(`/api/users/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Find user by exact email match
+   * Secure method for member assignment - requires exact email to prevent data leakage
+   */
+  findByEmail: async (email: string): Promise<{ user: User | null }> => {
+    const response = await apiClient.get(`/api/users/find-by-email?email=${encodeURIComponent(email)}`);
     return response.data;
   },
 

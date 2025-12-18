@@ -74,3 +74,97 @@ export interface AddProjectMemberRequest {
   userId: string;
   projectRoleCode: number; // 1=project_manager, 2=geino_user, 3=genba_user
 }
+
+// ============================================================================
+// Task API Types
+// ============================================================================
+
+export interface ListTasksParams extends PaginationParams {
+  statusCode?: number;
+  assignedTo?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface CreateTaskRequest {
+  title: string;
+  description?: string;
+  statusCode?: number;
+  typeCode?: number;
+  priorityCode?: number;
+  assignedTo?: string;
+  deadline?: string; // ISO date string
+}
+
+export interface UpdateTaskRequest {
+  title?: string;
+  description?: string;
+  statusCode?: number;
+  typeCode?: number;
+  priorityCode?: number;
+  assignedTo?: string;
+  deadline?: string; // ISO date string
+}
+
+export interface UpdateTaskStatusRequest {
+  statusCode: number;
+}
+
+// ============================================================================
+// Comment API Types
+// ============================================================================
+
+export interface CreateCommentRequest {
+  content: string;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
+}
+
+// ============================================================================
+// Calendar API Types
+// ============================================================================
+
+export interface CalendarTasksParams {
+  projectIds: string[]; // Array of project IDs
+  fromDate: string; // ISO date string
+  toDate: string; // ISO date string
+}
+
+export interface CalendarTasksResponse {
+  date: string;
+  tasks: import('./entities').TaskWithDetails[];
+}
+
+// ============================================================================
+// Upload API Types
+// ============================================================================
+
+export interface GenerateUploadUrlRequest {
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  taskId?: string;
+  commentId?: string;
+}
+
+export interface GenerateUploadUrlResponse {
+  uploadId: string;
+  uploadUrl: string;
+  fileKey: string;
+}
+
+export interface ConfirmUploadRequest {
+  uploadId: string;
+  fileKey: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  taskId?: string;
+  commentId?: string;
+}
+
+export interface GetDownloadUrlResponse {
+  downloadUrl: string;
+}

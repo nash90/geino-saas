@@ -3,14 +3,20 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
 		"cf-typegen": "wrangler types",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"deploy": "pnpm run deploy:staging",
+		"deploy:staging": "wrangler deploy --config wrangler.staging.jsonc",
+		"deploy:production": "wrangler deploy --config wrangler.production.jsonc",
+		"secrets:staging": "node scripts/set-secrets.js staging",
+		"secrets:production": "node scripts/set-secrets.js production",
+		"tail:staging": "wrangler tail geino-saas-staging",
+		"tail:production": "wrangler tail geino-saas-prod"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",

@@ -6,6 +6,7 @@ import { listUsersHandler } from '../handlers/users/listUsersHandler';
 import { getUserHandler } from '../handlers/users/getUserHandler';
 import { updateUserHandler } from '../handlers/users/updateUserHandler';
 import { deleteUserHandler } from '../handlers/users/deleteUserHandler';
+import { findUserByEmailHandler } from '../handlers/users/findUserByEmailHandler';
 
 const usersRoute = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
 
@@ -19,6 +20,10 @@ usersRoute.use('*', async (c, next) => {
   }
 });
 
+// Public routes for authenticated users
+usersRoute.get('/find-by-email', findUserByEmailHandler);
+
+// Admin-only routes
 usersRoute.get('/', requireSystemAdmin(), listUsersHandler);
 usersRoute.get('/:id', requireSystemAdmin(), getUserHandler);
 usersRoute.patch('/:id', requireSystemAdmin(), updateUserHandler);

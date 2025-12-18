@@ -167,4 +167,36 @@ export class UserQueryService extends BaseUserService {
       return this.handleError(error, 'UserQueryService.getUserById');
     }
   }
+
+  /**
+   * Find user by exact email match
+   * Used for secure member assignment - prevents data leakage by requiring exact email
+   * @param email - Exact email address to search for
+   */
+  async findUserByEmail(email: string): Promise<ServiceResponse<User | null>> {
+    try {
+      // Validate email format
+      const validation = this.validationService.validateEmail(email);
+      if (!validation.valid) {
+        return this.error(validation.error!, 'INVALID_EMAIL');
+      }
+
+      const user = await this.db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.email, email.toLowerCase()),
+        columns: {
+          id: true,
+          email: true,
+          firstname: true,
+          lastname: true,
+          systemRoleCode: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return this.success(user || null);
+    } catch (error) {
+      return this.handleError(error, 'UserQueryService.findUserByEmail');
+    }
+  }
 }

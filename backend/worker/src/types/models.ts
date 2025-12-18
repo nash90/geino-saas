@@ -1,5 +1,5 @@
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import { users, organizations, organizationMembers } from '../db/schema';
+import { users, organizations, organizationMembers, tasks, taskComments, attachments } from '../db/schema';
 
 /**
  * Database Models
@@ -109,4 +109,92 @@ export type OrganizationMemberWithUser = OrganizationMember & {
  */
 export type OrganizationWithMembers = Organization & {
   members: OrganizationMemberWithUser[];
+};
+
+// ============================================================================
+// Task Models
+// ============================================================================
+
+/**
+ * Full task model (SELECT)
+ * Use for database query results
+ */
+export type Task = InferSelectModel<typeof tasks>;
+
+/**
+ * New task model (INSERT)
+ * Use for creating new tasks
+ */
+export type NewTask = InferInsertModel<typeof tasks>;
+
+/**
+ * Task update model (UPDATE)
+ * All fields optional except id
+ */
+export type TaskUpdate = Partial<Omit<Task, 'id'>> & { id: string };
+
+/**
+ * Task with detailed information (for display)
+ */
+export type TaskWithDetails = Task & {
+  assignee?: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>;
+  creator?: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>;
+  attachments?: Attachment[];
+};
+
+// ============================================================================
+// Task Comment Models
+// ============================================================================
+
+/**
+ * Full task comment model (SELECT)
+ * Use for database query results
+ */
+export type TaskComment = InferSelectModel<typeof taskComments>;
+
+/**
+ * New task comment model (INSERT)
+ * Use for creating new comments
+ */
+export type NewTaskComment = InferInsertModel<typeof taskComments>;
+
+/**
+ * Task comment with user details (for display)
+ */
+export type TaskCommentWithUser = TaskComment & {
+  user: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>;
+  attachments?: Attachment[];
+};
+
+/**
+ * Task with comments (for detail view)
+ */
+export type TaskWithComments = Task & {
+  comments: TaskCommentWithUser[];
+  assignee?: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>;
+  creator?: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>;
+  attachments?: Attachment[];
+};
+
+// ============================================================================
+// Attachment Models
+// ============================================================================
+
+/**
+ * Full attachment model (SELECT)
+ * Use for database query results
+ */
+export type Attachment = InferSelectModel<typeof attachments>;
+
+/**
+ * New attachment model (INSERT)
+ * Use for creating new attachments
+ */
+export type NewAttachment = InferInsertModel<typeof attachments>;
+
+/**
+ * Attachment with uploader info (for display)
+ */
+export type AttachmentWithUploader = Attachment & {
+  uploader: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>;
 };
