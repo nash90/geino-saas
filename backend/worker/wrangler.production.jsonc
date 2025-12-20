@@ -60,12 +60,43 @@
 	],
 
 	/**
+	 * Cloudflare Queues for event-driven notifications
+	 */
+	"queues": {
+		"producers": [
+			{
+				"binding": "NOTIFICATIONS_QUEUE",
+				"queue": "geino-notifications-prod"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "geino-notifications-prod",
+				"max_batch_size": 10,
+				"max_batch_timeout": 30,
+				"max_retries": 3,
+				"dead_letter_queue": "geino-notifications-prod-dlq"
+			}
+		]
+	},
+
+	/**
+	 * Cron triggers for scheduled tasks (partition management)
+	 * Runs on 1st day of each month at midnight UTC
+	 */
+	"triggers": {
+		"crons": ["0 0 1 * *"]
+	},
+
+	/**
 	 * Secrets (Set via CLI in CLIENT'S account)
 	 * Run these commands after switching to client's account:
 	 *
 	 * wrangler secret put SUPABASE_URL --env production
 	 * wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env production
 	 * wrangler secret put DATABASE_URL --env production
+	 * wrangler secret put FROM_EMAIL --env production
+	 * wrangler secret put FROM_NAME --env production
 	 */
 
 	/**

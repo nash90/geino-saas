@@ -4,6 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import type { ServiceResponse } from '../../types';
 import type { TaskComment, TaskCommentWithUser, Attachment } from '../../types/models';
 import { extractMentionedUserIds } from '../../utils/mentionParser';
+import { NotificationType } from '../../types/notificationTypes';
 
 /**
  * Task Comment Service
@@ -130,16 +131,19 @@ export class TaskCommentService extends BaseTaskService {
       // Format: @[Display Name](userId)
       const mentionedUserIds = extractMentionedUserIds(content);
 
-      // TODO: US-20 - Emit 'comment.created' event to Cloudflare Queue
-      // Event data should include:
-      // - commentId: comment.id
-      // - taskId: taskId
-      // - createdBy: userId
-      // - mentionedUserIds: mentionedUserIds (extracted from @mentions)
-      // Queue consumer will:
-      // 1. Create in-app notifications for mentioned users
-      // 2. Send email notifications to mentioned users
-      // 3. Notify task watchers (assignee, creator, etc.)
+      // Emit event for each mentioned user
+      if (mentionedUserIds.length > 0) {
+        await this.env.NOTIFICATIONS_QUEUE.send({
+          typeCode: NotificationType.USER_MENTIONED.code,
+          payload: {
+            recipientUserIds: mentionedUserIds,
+            actorUserId: userId,
+            taskId,
+            commentId: comment.id,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
 
       return this.success(comment as TaskComment);
     } catch (error) {

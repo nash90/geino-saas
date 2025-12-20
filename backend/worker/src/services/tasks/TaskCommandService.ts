@@ -4,6 +4,7 @@ import { eq, and } from 'drizzle-orm';
 import type { ServiceResponse } from '../../types';
 import type { Task } from '../../types/models';
 import { TaskStatus, ProjectRole } from '../../types/codeTypes';
+import { NotificationType } from '../../types/notificationTypes';
 
 export interface CreateTaskData {
   projectId: string;
@@ -121,8 +122,19 @@ export class TaskCommandService extends BaseTaskService {
         })
         .returning();
 
-      // TODO: US-20 - Emit 'task.assigned' event to Cloudflare Queue if assignedTo is set
-      // Queue consumer will create in-app notification and send email notification
+      // Emit task assigned event if assignedTo is set
+      if (data.assignedTo) {
+        await this.env.NOTIFICATIONS_QUEUE.send({
+          typeCode: NotificationType.TASK_ASSIGNED.code,
+          payload: {
+            recipientUserId: data.assignedTo,
+            actorUserId: data.createdBy,
+            taskId: task.id,
+            projectId: data.projectId,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
 
       return this.success(task as Task);
     } catch (error) {
@@ -228,8 +240,68 @@ export class TaskCommandService extends BaseTaskService {
         .where(eq(tasks.id, taskId))
         .returning();
 
-      // TODO: US-20 - If assignedTo changed, emit 'task.assigned' event to Cloudflare Queue
-      // TODO: US-20 - If statusCode changed, emit 'task.status_changed' event to Cloudflare Queue
+      // Emit event if assignedTo changed
+      if (updateData.assignedTo && updateData.assignedTo !== task.assignedTo) {
+        await this.env.NOTIFICATIONS_QUEUE.send({
+          typeCode: NotificationType.TASK_ASSIGNED.code,
+          payload: {
+            recipientUserId: updateData.assignedTo,
+            actorUserId: userId,
+            taskId,
+            projectId: task.projectId,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+      // Emit event if status changed
+      if (updateData.statusCode && updateData.statusCode !== task.statusCode) {
+        if (task.assignedTo) {
+          await this.env.NOTIFICATIONS_QUEUE.send({
+            typeCode: NotificationType.TASK_STATUS_CHANGED.code,
+            payload: {
+              recipientUserId: task.assignedTo,
+              actorUserId: userId,
+              taskId,
+              projectId: task.projectId,
+              oldValue: task.statusCode,
+              newValue: updateData.statusCode,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
+
+      // Emit event if other details changed (title, description, deadline)
+      if (updateData.title || updateData.description || updateData.deadline) {
+        // Notify assignee if they didn't make the change
+        if (task.assignedTo && task.assignedTo !== userId) {
+          await this.env.NOTIFICATIONS_QUEUE.send({
+            typeCode: NotificationType.TASK_DETAIL_CHANGED.code,
+            payload: {
+              recipientUserId: task.assignedTo,
+              actorUserId: userId,
+              taskId,
+              projectId: task.projectId,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+
+        // Notify creator if they didn't make the change and aren't the assignee
+        if (task.createdBy !== userId && task.createdBy !== task.assignedTo) {
+          await this.env.NOTIFICATIONS_QUEUE.send({
+            typeCode: NotificationType.TASK_UPDATED.code,
+            payload: {
+              recipientUserId: task.createdBy,
+              actorUserId: userId,
+              taskId,
+              projectId: task.projectId,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      }
 
       return this.success(updatedTask as Task);
     } catch (error) {
@@ -278,7 +350,23 @@ export class TaskCommandService extends BaseTaskService {
         .where(eq(tasks.id, taskId))
         .returning();
 
-      // TODO: US-20 - Emit 'task.status_changed' event to Cloudflare Queue
+      const task = editCheck.task;
+
+      // Emit task status changed event if assignee exists
+      if (task.assignedTo) {
+        await this.env.NOTIFICATIONS_QUEUE.send({
+          typeCode: NotificationType.TASK_STATUS_CHANGED.code,
+          payload: {
+            recipientUserId: task.assignedTo,
+            actorUserId: userId,
+            taskId,
+            projectId: task.projectId,
+            oldValue: task.statusCode,
+            newValue: statusCode,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
 
       return this.success(updatedTask as Task);
     } catch (error) {

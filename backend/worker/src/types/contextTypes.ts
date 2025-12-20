@@ -17,6 +17,13 @@ export interface Env {
   R2_ACCESS_KEY_ID?: string;
   R2_SECRET_ACCESS_KEY?: string;
   R2_BUCKET_NAME?: string;
+
+  // Queue binding for notifications
+  NOTIFICATIONS_QUEUE: Queue;
+
+  // Email settings for MailChannels
+  FROM_EMAIL: string;
+  FROM_NAME: string;
 }
 
 /**

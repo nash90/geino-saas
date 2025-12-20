@@ -43,6 +43,13 @@
       "when": 1765880812782,
       "tag": "20251216102652_add_organization_members_index",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766233889586,
+      "tag": "20251220123128_add_notifications_with_partition",
+      "breakpoints": true
     }
   ]
 }

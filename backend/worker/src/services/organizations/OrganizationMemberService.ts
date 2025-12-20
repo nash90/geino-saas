@@ -3,6 +3,7 @@ import { organizationMembers, users } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { ServiceResponse, AddMemberData } from '../../types';
 import { OrganizationRole } from '../../types/codeTypes';
+import { NotificationType } from '../../types/notificationTypes';
 
 /**
  * Organization Member Service
@@ -16,7 +17,8 @@ export class OrganizationMemberService extends BaseOrganizationService {
    */
   async addMember(
     organizationId: string,
-    data: AddMemberData
+    data: AddMemberData,
+    currentUserId: string
   ): Promise<ServiceResponse<{ id: string }>> {
     try {
       // Validate IDs
@@ -70,9 +72,17 @@ export class OrganizationMemberService extends BaseOrganizationService {
         })
         .returning({ id: organizationMembers.id });
 
-      // TODO: US-20 - Emit 'organization.member_assigned' event to Cloudflare Queue
-      // with { userId, organizationId, organizationName, organizationRoleCode }
-      // Queue consumer will create in-app notification and send email notification
+      // Emit organization manager assigned event
+      await this.env.NOTIFICATIONS_QUEUE.send({
+        typeCode: NotificationType.ORGANIZATION_MANAGER_ASSIGNED.code,
+        payload: {
+          recipientUserId: data.userId,
+          actorUserId: currentUserId,
+          organizationId,
+          roleCode: data.organizationRoleCode,
+          timestamp: new Date().toISOString(),
+        },
+      });
 
       return this.success(member);
     } catch (error) {

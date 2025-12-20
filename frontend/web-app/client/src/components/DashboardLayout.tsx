@@ -1,10 +1,12 @@
 import { Bell, Building2, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, UserPlus } from "lucide-react";
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { MOCK_NOTIFICATIONS } from "@/../../shared/const";
 import { useAuth } from "@/contexts/AuthContext";
+import { notificationsApi, type Notification } from '@/api/notifications';
+import { NotificationList } from '@/components/notifications/NotificationList';
+import { toast } from 'sonner';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -16,10 +18,83 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const { logout, user, organizations } = useAuth();
 
+  // Bell notification state
+  const [bellNotifications, setBellNotifications] = useState<Notification[]>([]);
+  const [bellUnreadCount, setBellUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  // Task progress notification state
+  const [taskProgressUnreadCount, setTaskProgressUnreadCount] = useState(0);
+
   // System admin check: systemRoleCode = 1
   const isSystemAdmin = user?.systemRoleCode === 1;
   // Organization Manager: has at least one organization membership
   const isOrganizationManager = organizations.length > 0;
+
+  // Load bell notifications when dropdown opens
+  useEffect(() => {
+    if (notificationOpen) {
+      loadBellNotifications();
+    }
+  }, [notificationOpen]);
+
+  // Load unread count on mount
+  useEffect(() => {
+    loadUnreadCount();
+    loadTaskProgressUnreadCount();
+  }, []);
+
+  const loadBellNotifications = async () => {
+    setLoadingNotifications(true);
+    try {
+      const data = await notificationsApi.list('bell', 20, 0);
+      setBellNotifications(data.notifications);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const loadUnreadCount = async () => {
+    try {
+      const data = await notificationsApi.getUnreadCount('bell');
+      setBellUnreadCount(data.count);
+    } catch (error) {
+      console.error('Failed to load unread count:', error);
+    }
+  };
+
+  const loadTaskProgressUnreadCount = async () => {
+    try {
+      const data = await notificationsApi.getUnreadCount('task_progress');
+      setTaskProgressUnreadCount(data.count);
+    } catch (error) {
+      console.error('Failed to load task progress unread count:', error);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      await notificationsApi.markAsRead(notificationId);
+      loadBellNotifications();
+      loadUnreadCount();
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationsApi.markAllAsRead('bell');
+      loadBellNotifications();
+      loadUnreadCount();
+      toast.success('すべての通知を既読にしました');
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+      toast.error('通知の更新に失敗しました');
+    }
+  };
 
   const menuItems = [
     { path: "/", label: "ホーム", icon: Home },
@@ -70,9 +145,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 >
                   <Icon className="w-5 h-5" />
                   {!sidebarCollapsed && <span>{item.label}</span>}
-                  {!sidebarCollapsed && item.label === "進捗ありタスク" && (
-                    <span className="ml-auto bg-yellow-400 text-purple-900 text-xs font-bold rounded px-2 py-1">
-                      5
+                  {!sidebarCollapsed && item.label === "進捗ありタスク" && taskProgressUnreadCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1">
+                      {taskProgressUnreadCount}
                     </span>
                   )}
                 </div>
@@ -109,8 +184,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => setNotificationOpen(true)}
           >
             <Bell className="w-5 h-5" />
-            {MOCK_NOTIFICATIONS.filter((n: any) => !n.read).length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            {bellUnreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {bellUnreadCount > 9 ? '9+' : bellUnreadCount}
+              </span>
             )}
           </Button>
 
@@ -140,20 +217,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Dialog open={notificationOpen} onOpenChange={setNotificationOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>通知一覧</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>通知</span>
+              {bellUnreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleMarkAllAsRead}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  すべて既読にする
+                </Button>
+              )}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {MOCK_NOTIFICATIONS.map((notification: any) => (
-              <div
-                key={notification.id}
-                className={`p-3 rounded-lg border ${
-                  notification.read ? "bg-gray-50" : "bg-blue-50 border-blue-200"
-                }`}
-              >
-                <p className="text-sm font-medium">{notification.message}</p>
-                <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
-              </div>
-            ))}
+
+          <div className="max-h-[400px] overflow-y-auto">
+            <NotificationList
+              notifications={bellNotifications}
+              loading={loadingNotifications}
+              onMarkAsRead={handleMarkAsRead}
+            />
           </div>
         </DialogContent>
       </Dialog>

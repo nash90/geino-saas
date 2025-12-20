@@ -2,6 +2,7 @@ import { BaseProjectService } from './BaseProjectService';
 import { projects, projectMembers, users, organizations } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { ServiceResponse } from '../../types';
+import { NotificationType } from '../../types/notificationTypes';
 
 export interface CreateProjectData {
   organizationId: string;
@@ -110,9 +111,19 @@ export class ProjectCommandService extends BaseProjectService {
           }))
         );
 
-        // TODO: US-20 - Emit 'project.member_assigned' event to Cloudflare Queue
-        // for each member with { userId, projectId, projectName, projectRoleCode }
-        // Queue consumer will create in-app notification and send email notification
+        // Emit event for each assigned member
+        for (const member of data.members) {
+          await this.env.NOTIFICATIONS_QUEUE.send({
+            typeCode: NotificationType.PROJECT_MEMBER_ASSIGNED.code,
+            payload: {
+              recipientUserId: member.userId,
+              actorUserId: data.createdBy,
+              projectId: project.id,
+              roleCode: member.projectRoleCode,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
       }
 
       return this.success(project);
@@ -224,7 +235,8 @@ export class ProjectCommandService extends BaseProjectService {
   async addMember(
     projectId: string,
     userId: string,
-    projectRoleCode: number
+    projectRoleCode: number,
+    currentUserId: string
   ): Promise<ServiceResponse<{ id: string }>> {
     try {
       // Validate IDs
@@ -280,7 +292,17 @@ export class ProjectCommandService extends BaseProjectService {
         })
         .returning({ id: projectMembers.id });
 
-      // TODO: US-20 - Emit 'project.member_assigned' event to Cloudflare Queue
+      // Emit project member assigned event
+      await this.env.NOTIFICATIONS_QUEUE.send({
+        typeCode: NotificationType.PROJECT_MEMBER_ASSIGNED.code,
+        payload: {
+          recipientUserId: userId,
+          actorUserId: currentUserId,
+          projectId,
+          roleCode: projectRoleCode,
+          timestamp: new Date().toISOString(),
+        },
+      });
 
       return this.success(member);
     } catch (error) {

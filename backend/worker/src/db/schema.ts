@@ -119,3 +119,30 @@ export const attachments = pgTable('attachments', {
   index('idx_attachments_comment_id').on(table.commentId),
   index('idx_attachments_uploaded_by').on(table.uploadedBy),
 ]);
+
+export const notifications = pgTable('notifications', {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(), // Recipient
+  typeCode: integer('type_code').notNull(), // Notification type code
+  categoryCode: integer('category_code').notNull(), // 1=bell, 2=task_progress
+  title: varchar({ length: 255 }).notNull(),
+  message: text().notNull(),
+
+  // Links to related entities
+  taskId: uuid('task_id'),
+  projectId: uuid('project_id'),
+  organizationId: uuid('organization_id'),
+  commentId: uuid('comment_id'),
+
+  // Additional data as JSON
+  metadata: text(), // JSON string for flexible data storage
+
+  // State
+  readAt: timestamp('read_at'),
+  createdAt: timestamp('created_at').default(sql`now()`).notNull(),
+}, (table) => [
+  index('idx_notifications_user_id').on(table.userId),
+  index('idx_notifications_created_at').on(table.createdAt),
+  index('idx_notifications_category_code').on(table.categoryCode),
+  index('idx_notifications_type_code').on(table.typeCode),
+]);

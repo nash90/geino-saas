@@ -47,12 +47,42 @@
 	],
 
 	/**
+	 * Cloudflare Queues for event-driven notifications
+	 */
+	"queues": {
+		"producers": [
+			{
+				"binding": "NOTIFICATIONS_QUEUE",
+				"queue": "geino-notifications-staging"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "geino-notifications-staging",
+				"max_batch_size": 10,
+				"max_batch_timeout": 30,
+				"max_retries": 3
+			}
+		]
+	},
+
+	/**
+	 * Cron triggers for scheduled tasks (partition management)
+	 * Runs on 1st day of each month at midnight UTC
+	 */
+	"triggers": {
+		"crons": ["0 0 1 * *"]
+	},
+
+	/**
 	 * Secrets (Set via CLI - DO NOT commit these values)
 	 * Run these commands after first deployment:
 	 *
 	 * wrangler secret put SUPABASE_URL --env staging
 	 * wrangler secret put SUPABASE_SERVICE_ROLE_KEY --env staging
 	 * wrangler secret put DATABASE_URL --env staging
+	 * wrangler secret put FROM_EMAIL --env staging
+	 * wrangler secret put FROM_NAME --env staging
 	 *
 	 * Or use bulk upload from .env.staging:
 	 * cat .env.staging | grep -v '^#' | grep -v '^$' | while IFS='=' read -r key value; do

@@ -193,36 +193,140 @@ View and Download Attachments (All users with access to task)
 
 
 7. NOTIFICATIONS
-Receive Notifications
-- As a user, I receive an in-app notification AND an email notification when:
- * I am assigned a task
- * A task I'm assigned to changes status
- * I am assigned a role (Organization Manager, Project Manager, etc.)
- * I am mentioned in a comment
- * I am added to a project
+
+## 7.1 Bell Notification (Header Icon)
+**Purpose:** Real-time alerts for mentions and project inclusions
+
+**Bell Icon Notifications:**
+- As a user, I receive a bell notification (+ email) when:
+  * I am mentioned in a comment (@mention)
+  * I am added to a project
+  * I am assigned a role (Organization Manager, Project Manager, etc.)
+
+**Bell Notification UI Features:**
+- Unread badge count displays on bell icon in header
+- Click bell icon to open notification dropdown/panel
+- Each notification shows:
+  * Type (mention, project added, role assigned)
+  * Brief message/context
+  * Timestamp (e.g., "2025/5/27 10:30")
+  * Link to related resource (task, project, comment)
+- Mark individual notifications as read
+- "Mark all as read" button
+- Notifications remain in history after being read
+- Notifications are sorted by newest first
 
 
-View Notification History
-- As a user, I can view my notification history
-- I can see which notifications are unread (badge count on bell icon)
-- I can mark individual notifications as read
-- I can mark all notifications as read at once
-- Each notification has a link that takes me directly to the related task or project
+## 7.2 Task Progress Page (タスク進捗)
+**Purpose:** Dedicated page for tracking task status changes and assignments
+
+**Task Progress Notifications:**
+- As a user, I receive a task progress notification (+ email) when:
+  * I am assigned a task
+  * A task I'm assigned to changes status (Hold → Todo → In Progress → Done)
+  * A task I'm assigned to has its detail changed
+  * A task I created is updated by someone else
+
+**Task Progress Page UI Features:**
+- Dedicated page route: `/tasks-progress`
+- Filter notifications by:
+  * Status change type (Hold, Todo, In Progress, Done)
+  * Project
+- Each notification shows:
+  * Task title
+  * Old status → New status (for status changes)
+  * Changed by (user name)
+  * Timestamp
+  * Link to open task detail dialog
+- Mark notifications as read/unread
+- Unread badge count on navigation menu item
 
 
+## 7.3 Notification System Architecture (Event-Driven with Cloudflare Queue)
 
+**Core Principle:** Backend emits events; Event handler processes both notification DB record + email
 
-NOTIFICATION DETAILS
-Users receive email notifications for:
+### Event-Driven Flow:
+```
+API Action → Emit Event to Cloudflare Queue with necessary db ids etc payload → Queue Consumer processes:
+                                                 1. Create/Update notification record in DB
+                                                 2. Send email via SMTP provider
+```
+
+### Notification Events:
+
+**Authentication Events:** (Out of scope - handled by Supabase)
 - Account registration (verification/invite email)
 - Password reset request (reset link)
 - Password reset confirmation
-- Organization Manager role assignment
-- Project Manager role assignment
-- Geino User or Genba User project assignment
-- Task assignment
-- Task status changes
-- Comments with @mentions
+
+**Bell Notification Events:**
+- `user.mentioned` - User mentioned in a comment (@mention)
+- `project.member_added` - User added to a project
+- `organization.manager_assigned` - Assigned Organization Manager role
+- `project.manager_assigned` - Assigned Project Manager role
+- `project.member_assigned` - Assigned Geino User or Genba User role
+
+**Task Progress Events:**
+- `task.assigned` - User assigned to a task
+- `task.status_changed` - Task status changed (on tasks user is assigned to)
+- `task.detail_changed` - Task details changed (title, description, deadline, assignee)
+- `task.updated` - Task user created is updated by someone else
+
+### Backend Implementation Pattern:
+
+**API Handler (Producer):**
+```typescript
+// Example: When assigning a task
+async function assignTaskHandler(c: Context) {
+  // 1. Perform the business logic
+  await tasksService.assignTask(taskId, userId);
+
+  // 2. Emit event to queue (non-blocking)
+  await c.env.NOTIFICATION_QUEUE.send({
+    type: 'task.assigned',
+    payload: {
+      taskId,
+      assignedUserId: userId,
+      assignedByUserId: c.get('user').id,
+      timestamp: new Date().toISOString()
+    }
+  });
+
+  // 3. Return success immediately (don't wait for email/notification)
+  return c.json({ success: true });
+}
+```
+
+**Queue Consumer (Event Handler):**
+```typescript
+// Processes ALL notification events
+async function handleNotificationEvent(batch: MessageBatch<NotificationEvent>) {
+  for (const message of batch.messages) {
+    const { type, payload } = message.body;
+
+    try {
+      // 1. Create in-app notification record in DB
+      await createNotificationRecord(type, payload);
+
+      // 2. Send email notification
+      await sendEmailNotification(type, payload);
+
+      message.ack(); // Mark as processed
+    } catch (error) {
+      message.retry(); // Automatic retry on failure
+    }
+  }
+}
+```
+
+### Benefits:
+- **Single event emission** - Backend just emits event, doesn't handle email/DB directly
+- **Centralized logic** - All notification creation + email sending in one place (queue consumer)
+- **Non-blocking** - API returns immediately, notification processing happens async
+- **Automatic retries** - Cloudflare Queue handles retry logic for failed sends
+- **Scalable** - Queue can handle high volume of events
+- **Consistent** - Same pattern for all notification types
 
 
 
