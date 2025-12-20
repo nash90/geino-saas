@@ -9,13 +9,6 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { Loader2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
@@ -29,6 +22,7 @@ import {
   TaskCreateDialog,
   TaskDetailDialog,
 } from "@/components/tasks";
+import { ProjectMultiSelect } from "@/components/ProjectMultiSelect";
 
 type ColumnType = "hold" | "todo" | "inProgress" | "done";
 
@@ -50,7 +44,17 @@ export default function TaskBoard() {
   const { user, projects } = useAuth();
   const permissions = usePermissions();
 
-  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(() => {
+    const stored = localStorage.getItem('taskboard_selected_projects');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [currentProjectDetails, setCurrentProjectDetails] = useState<ProjectWithMembers | null>(null);
   const [tasks, setTasks] = useState<TaskWithDetails[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,32 +74,65 @@ export default function TaskBoard() {
     })
   );
 
-  // Initialize with first project
+  // Validate and initialize selected projects
   useEffect(() => {
-    if (projects.length > 0 && !selectedProject) {
-      setSelectedProject(projects[0].id);
-    }
-  }, [projects, selectedProject]);
+    if (projects.length === 0) return;
 
-  // Load tasks and project details when project changes
+    const projectIds = projects.map(p => p.id);
+
+    // Validate stored selections against available projects
+    let validSelections = selectedProjects.filter(id => projectIds.includes(id));
+
+    // If no valid selections or empty, default to first project
+    if (validSelections.length === 0) {
+      validSelections = [projects[0].id];
+    }
+
+    // Enforce max 5 limit (safety check)
+    if (validSelections.length > 5) {
+      validSelections = validSelections.slice(0, 5);
+    }
+
+    // Update state if validation changed the selection
+    const currentSelection = JSON.stringify(selectedProjects.slice().sort());
+    const newSelection = JSON.stringify(validSelections.slice().sort());
+
+    if (currentSelection !== newSelection) {
+      setSelectedProjects(validSelections);
+    }
+  }, [projects, selectedProjects]);
+
+  // Persist selected projects to localStorage
   useEffect(() => {
-    if (selectedProject) {
+    localStorage.setItem('taskboard_selected_projects', JSON.stringify(selectedProjects));
+  }, [selectedProjects]);
+
+  // Load tasks when selected projects change
+  useEffect(() => {
+    if (selectedProjects.length > 0) {
       loadProjectData();
     }
-  }, [selectedProject]);
+  }, [selectedProjects]);
 
   const loadProjectData = async () => {
-    if (!selectedProject) return;
+    if (selectedProjects.length === 0) return;
 
     setLoading(true);
     try {
-      // Fetch project details with members
-      const projectResponse = await projectsApi.get(selectedProject);
+      // Fetch project details for the first selected project (for permissions and member list)
+      const projectResponse = await projectsApi.get(selectedProjects[0]);
       setCurrentProjectDetails(projectResponse.project);
 
-      // Fetch tasks
-      const tasksResponse = await tasksApi.list(selectedProject);
-      setTasks(tasksResponse.tasks);
+      // Fetch tasks for all selected projects in parallel
+      const taskPromises = selectedProjects.map(projectId =>
+        tasksApi.list(projectId)
+      );
+
+      const responses = await Promise.all(taskPromises);
+
+      // Merge all tasks from different projects
+      const allTasks = responses.flatMap(response => response.tasks);
+      setTasks(allTasks);
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to load project data");
     } finally {
@@ -104,11 +141,19 @@ export default function TaskBoard() {
   };
 
   const loadTasks = async () => {
-    if (!selectedProject) return;
+    if (selectedProjects.length === 0) return;
 
     try {
-      const response = await tasksApi.list(selectedProject);
-      setTasks(response.tasks);
+      // Fetch tasks for all selected projects in parallel
+      const taskPromises = selectedProjects.map(projectId =>
+        tasksApi.list(projectId)
+      );
+
+      const responses = await Promise.all(taskPromises);
+
+      // Merge all tasks from different projects
+      const allTasks = responses.flatMap(response => response.tasks);
+      setTasks(allTasks);
     } catch (error: any) {
       toast.error(error.response?.data?.error || "Failed to load tasks");
     }
@@ -159,8 +204,10 @@ export default function TaskBoard() {
   };
 
   const handleAddTask = (statusCode?: number) => {
-    if (!selectedProject) return;
-    if (!permissions.canCreateTask(selectedProject, statusCode)) {
+    if (selectedProjects.length === 0) return;
+    // Use the first selected project for creating tasks
+    const primaryProject = selectedProjects[0];
+    if (!permissions.canCreateTask(primaryProject, statusCode)) {
       toast.error("You don't have permission to create tasks");
       return;
     }
@@ -209,8 +256,8 @@ export default function TaskBoard() {
   })) || [];
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
-  const canCreateAnyStatus = selectedProject
-    ? permissions.isProjectManagerOrAbove(selectedProject)
+  const canCreateAnyStatus = selectedProjects.length > 0
+    ? permissions.isProjectManagerOrAbove(selectedProjects[0])
     : false;
 
   if (projects.length === 0) {
@@ -231,18 +278,16 @@ export default function TaskBoard() {
         <>
           <div className="mb-6 flex items-center gap-4">
             <h1 className="text-xl font-bold">Task Board</h1>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="プロジェクトを選択..." />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {projects.length > 0 ? (
+              <ProjectMultiSelect
+                projects={projects.map(p => ({ id: p.id, name: p.name }))}
+                selectedProjectIds={selectedProjects}
+                onSelectionChange={setSelectedProjects}
+                placeholder="プロジェクトを選択 (最大5つ)"
+              />
+            ) : (
+              <div className="text-sm text-gray-500">プロジェクトを読み込み中...</div>
+            )}
           </div>
 
           <DndContext
@@ -258,8 +303,8 @@ export default function TaskBoard() {
                 tasks={getTasksByColumn("hold")}
                 onTaskClick={handleTaskClick}
                 onAddTask={() => handleAddTask(TaskStatus.HOLD.code)}
-                showAddButton={permissions.canCreateTask(
-                  selectedProject,
+                showAddButton={selectedProjects.length > 0 && permissions.canCreateTask(
+                  selectedProjects[0],
                   TaskStatus.HOLD.code
                 )}
                 canDragTasks={(task) => permissions.canChangeTaskStatus(task)}
@@ -305,7 +350,7 @@ export default function TaskBoard() {
           <TaskCreateDialog
         open={isCreateDialogOpen}
         onClose={handleDialogClose}
-        projectId={selectedProject}
+        projectId={selectedProjects[0] || ""}
         statusCode={createDialogStatus}
         projectMembers={projectMembers}
         onTaskCreated={loadTasks}
@@ -319,7 +364,7 @@ export default function TaskBoard() {
         projectMembers={projectMembers}
         onTaskUpdated={handleTaskUpdated}
         canEdit={selectedTask ? permissions.canEditTask(selectedTask) : false}
-        canDelete={selectedProject ? permissions.canDeleteTask(selectedProject) : false}
+        canDelete={selectedProjects.length > 0 ? permissions.canDeleteTask(selectedProjects[0]) : false}
       />
         </>
       )}
