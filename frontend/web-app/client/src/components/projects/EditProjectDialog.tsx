@@ -66,7 +66,7 @@ export function EditProjectDialog({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-xl">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle>プロジェクトを編集</DialogTitle>
         </DialogHeader>
 

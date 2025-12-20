@@ -92,7 +92,7 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle>メンバー追加 - {project.name}</DialogTitle>
         </DialogHeader>
 

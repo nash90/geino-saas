@@ -69,7 +69,7 @@ export function CreateProjectDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle>新規プロジェクト作成</DialogTitle>
         </DialogHeader>
 

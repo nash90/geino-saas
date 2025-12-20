@@ -31,7 +31,7 @@ export function ProjectDetailDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-8">
             <DialogTitle>{project.name}</DialogTitle>
             {isProjectManagerOrAbove(project.id) && (
               <Button
