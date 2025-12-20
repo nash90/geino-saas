@@ -9,13 +9,12 @@ import type { Env } from '@/types/contextTypes';
 import { processNotificationEvent } from './processor';
 import type { NotificationEvent } from './types';
 
-export default {
-  async queue(
-    batch: MessageBatch<NotificationEvent>,
-    env: Env
-  ): Promise<void> {
-    const db = createDbClient(env.DATABASE_URL);
-    const notificationService = new NotificationService(db, env);
+export async function queue(
+  batch: MessageBatch<NotificationEvent>,
+  env: Env
+): Promise<void> {
+  const db = createDbClient(env.DATABASE_URL);
+  const notificationService = new NotificationService(db, env);
 
     for (const message of batch.messages) {
       try {
@@ -44,5 +43,4 @@ export default {
         message.retry();
       }
     }
-  },
-};
+}

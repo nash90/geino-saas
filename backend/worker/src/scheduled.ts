@@ -2,10 +2,9 @@ import { createDbClient } from './db/client';
 import { NotificationService } from './services/notifications/NotificationService';
 import type { Env } from './types/contextTypes';
 
-export default {
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    const db = createDbClient(env.DATABASE_URL);
-    const notificationService = new NotificationService(db, env);
+export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  const db = createDbClient(env.DATABASE_URL);
+  const notificationService = new NotificationService(db, env);
 
     // 1. Create partition for next month
     const createResult = await notificationService.createNextMonthPartition();
@@ -22,5 +21,4 @@ export default {
     } else {
       console.error('Scheduled partition drop failed:', dropResult.error);
     }
-  },
-};
+}

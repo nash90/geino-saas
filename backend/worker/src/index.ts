@@ -79,10 +79,13 @@ app.route('/api/projects', projects);
 app.route('/api', tasks); // Tasks routes include /projects/:projectId/tasks, /tasks, /comments, /calendar, /uploads
 app.route('/api/notifications', notifications);
 
-export default app;
+// Import queue and scheduled handlers
+import { queue } from './queue';
+import { scheduled } from './scheduled';
 
-// Export queue consumer for Cloudflare Queue
-export { default as queue } from './queue';
-
-// Export scheduled handler for Cron triggers
-export { default as scheduled } from './scheduled';
+// Export all handlers as a single default export object
+export default {
+  fetch: app.fetch,
+  queue,
+  scheduled,
+};

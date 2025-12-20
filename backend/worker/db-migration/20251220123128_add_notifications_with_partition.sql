@@ -1,6 +1,6 @@
 -- Create parent table as PARTITIONED by month
 CREATE TABLE "notifications" (
-	"id" uuid NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"type_code" integer NOT NULL,
 	"category_code" integer NOT NULL,
