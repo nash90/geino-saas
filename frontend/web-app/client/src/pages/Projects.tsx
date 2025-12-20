@@ -13,6 +13,7 @@ import { projectsApi } from "@/api/projects";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import type { ProjectWithMembers } from "@/types/entities";
+import { ProjectStatus } from "@/types/entities";
 import { toast } from "sonner";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
@@ -66,9 +67,14 @@ export default function Projects() {
     const orgIds = organizations.map(o => o.id);
     let validSelections = selectedOrganizations.filter(id => orgIds.includes(id));
 
-    // If no valid selections, default to all organizations
+    // If no valid selections, default to all organizations (up to 5)
     if (validSelections.length === 0) {
-      validSelections = orgIds;
+      validSelections = orgIds.slice(0, 5);
+    }
+
+    // Enforce max 5 limit
+    if (validSelections.length > 5) {
+      validSelections = validSelections.slice(0, 5);
     }
 
     const currentSelection = JSON.stringify(selectedOrganizations.slice().sort());
@@ -231,12 +237,8 @@ export default function Projects() {
   };
 
   const getStatusLabel = (statusCode: number) => {
-    switch (statusCode) {
-      case 1: return '進行中';
-      case 2: return '完了';
-      case 3: return 'アーカイブ';
-      default: return '不明';
-    }
+    const status = Object.values(ProjectStatus).find(s => s.code === statusCode);
+    return status?.label || '不明';
   };
 
   // Check if user can create projects in any organization
@@ -292,7 +294,8 @@ export default function Projects() {
               organizations={organizations.map(o => ({ id: o.id, name: o.name }))}
               selectedOrganizationIds={selectedOrganizations}
               onSelectionChange={setSelectedOrganizations}
-              placeholder="組織を選択"
+              maxSelections={5}
+              placeholder="組織を選択 (最大5つ)"
             />
           )}
 
@@ -302,9 +305,9 @@ export default function Projects() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">すべてのステータス</SelectItem>
-              <SelectItem value="1">進行中</SelectItem>
-              <SelectItem value="2">完了</SelectItem>
-              <SelectItem value="3">アーカイブ</SelectItem>
+              <SelectItem value={ProjectStatus.ACTIVE.code.toString()}>{ProjectStatus.ACTIVE.label}</SelectItem>
+              <SelectItem value={ProjectStatus.COMPLETED.code.toString()}>{ProjectStatus.COMPLETED.label}</SelectItem>
+              <SelectItem value={ProjectStatus.ARCHIVED.code.toString()}>{ProjectStatus.ARCHIVED.label}</SelectItem>
             </SelectContent>
           </Select>
 

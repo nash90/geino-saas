@@ -192,6 +192,12 @@ export const TaskType: Record<string, CodeType> = {
   TYPE_B: { code: 2, label: 'タスク種別B', key: 'type_b' }
 };
 
+export const ProjectStatus: Record<string, CodeType> = {
+  ACTIVE: { code: 1, label: '進行中', key: 'active' },
+  COMPLETED: { code: 2, label: '完了', key: 'completed' },
+  ARCHIVED: { code: 3, label: 'アーカイブ', key: 'archived' }
+};
+
 // Role code constants
 export const SystemRole = {
   SYSTEM_ADMIN: { code: 1, label: 'System Admin', key: 'system_admin' },

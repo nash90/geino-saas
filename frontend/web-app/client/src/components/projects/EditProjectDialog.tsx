@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ProjectWithMembers } from "@/types/entities";
+import { ProjectStatus } from "@/types/entities";
 
 interface EditProjectDialogProps {
   open: boolean;
@@ -130,9 +131,9 @@ export function EditProjectDialog({
                 <SelectValue placeholder="ステータスを選択" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">アクティブ</SelectItem>
-                <SelectItem value="2">完了</SelectItem>
-                <SelectItem value="3">アーカイブ</SelectItem>
+                <SelectItem value={ProjectStatus.ACTIVE.code.toString()}>{ProjectStatus.ACTIVE.label}</SelectItem>
+                <SelectItem value={ProjectStatus.COMPLETED.code.toString()}>{ProjectStatus.COMPLETED.label}</SelectItem>
+                <SelectItem value={ProjectStatus.ARCHIVED.code.toString()}>{ProjectStatus.ARCHIVED.label}</SelectItem>
               </SelectContent>
             </Select>
           </div>
