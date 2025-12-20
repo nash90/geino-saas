@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { eq } from 'drizzle-orm';
 import { users } from '../db/schema';
-import type { OptionalAuthContext, AuthContext, AuthUser } from '../types';
+import type { OptionalAuthContext, AuthUser } from '../types';
 import { SystemRole } from '../types/codeTypes';
+import type { Profiler } from '../lib/profiler';
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -11,13 +12,16 @@ function getCookieValue(cookieHeader: string | null, name: string): string | nul
 }
 
 export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
+  const profiler = c.get('profiler') as Profiler;
+
   const cookieHeader = c.req.header('Cookie');
   const token = getCookieValue(cookieHeader || null, 'access_token');
-  
+
   if (!token) {
     throw new Error('Unauthorized: No access token provided');
   }
 
+  // Use Supabase client to verify token (now fast with Tokyo region)
   const supabase = createClient(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -25,7 +29,8 @@ export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
   );
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
-  
+  profiler.checkpoint('Supabase auth verification');
+
   if (error || !user) {
     throw new Error('Unauthorized: Invalid token');
   }
@@ -34,6 +39,7 @@ export async function authenticate(c: OptionalAuthContext): Promise<AuthUser> {
   const appUser = await db.query.users.findFirst({
     where: eq(users.id, user.id)
   });
+  profiler.checkpoint('Get User DB query');
 
   if (!appUser) {
     throw new Error('User profile not found');

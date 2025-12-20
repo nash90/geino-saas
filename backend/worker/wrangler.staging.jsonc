@@ -36,15 +36,15 @@
                         "zone_name": "yamacity.com"
                 }
         ],	/**
-	 * R2 Buckets (for future file uploads)
+	 * R2 Buckets (for file uploads)
 	 * Create bucket first: wrangler r2 bucket create geino-saas-staging-uploads
 	 */
-	// "r2_buckets": [
-	// 	{
-	// 		"binding": "R2_BUCKET",
-	// 		"bucket_name": "geino-saas-staging-uploads"
-	// 	}
-	// ],
+	"r2_buckets": [
+		{
+			"binding": "ATTACHMENTS_BUCKET",
+			"bucket_name": "geino-saas-staging-uploads"
+		}
+	],
 
 	/**
 	 * Secrets (Set via CLI - DO NOT commit these values)

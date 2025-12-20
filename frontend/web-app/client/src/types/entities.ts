@@ -140,6 +140,15 @@ export interface TaskComment {
   attachments?: Attachment[];
 }
 
+export interface TaskCommentWithUser extends TaskComment {
+  user: {
+    id: string;
+    email: string;
+    firstname: string;
+    lastname: string;
+  };
+}
+
 export interface TaskWithComments extends Task {
   comments: TaskComment[];
   assignee?: {

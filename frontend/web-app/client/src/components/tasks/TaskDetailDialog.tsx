@@ -15,12 +15,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Copy, Upload, Download, Save, X as XIcon } from "lucide-react";
+import { Edit, Copy, Save, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
-import type { TaskWithComments } from "@/types/entities";
+import { uploadsApi } from "@/api/uploads";
+import type { TaskWithComments, TaskCommentWithUser } from "@/types/entities";
 import { TaskStatus, TaskType } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
+import { CommentList } from "./CommentList";
+import { CommentInput } from "./CommentInput";
+import { AttachmentUpload } from "./AttachmentUpload";
+import { FilePreview } from "./FilePreview";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TaskDetailDialogProps {
   task: TaskWithComments | null;
@@ -46,9 +52,11 @@ export function TaskDetailDialog({
   const [editedStatusCode, setEditedStatusCode] = useState<number>(TaskStatus.TODO.code);
   const [editedAssignedTo, setEditedAssignedTo] = useState<string>("");
   const [editedDeadline, setEditedDeadline] = useState("");
-  const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState<TaskCommentWithUser[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
   const permissions = usePermissions();
+  const { user } = useAuth();
 
   // Initialize edit form when task changes
   useEffect(() => {
@@ -59,8 +67,34 @@ export function TaskDetailDialog({
       setEditedAssignedTo(task.assignedTo || "");
       setEditedDeadline(task.deadline ? task.deadline.split('T')[0] : "");
       setIsEditMode(false);
+      fetchComments();
     }
   }, [task]);
+
+  const fetchComments = async () => {
+    if (!task?.id) return;
+
+    setLoadingComments(true);
+    try {
+      const response = await tasksApi.listComments(task.id);
+      setComments(response.comments || []);
+    } catch (error: any) {
+      console.error("Failed to fetch comments:", error);
+      toast.error("コメントの読み込みに失敗しました");
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleCommentAdded = () => {
+    fetchComments();
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!task) return;
+    await tasksApi.deleteComment(commentId);
+    fetchComments();
+  };
 
   if (!task) return null;
 
@@ -265,74 +299,54 @@ export function TaskDetailDialog({
             )}
 
             <div>
-              <h4 className="font-bold mb-2">画像</h4>
-              <div className="bg-gray-200 rounded-lg p-8 flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <div className="text-4xl mb-2">🖼️</div>
-                  <p className="text-sm">画像プレビュー</p>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-bold">画像</h4>
+                <AttachmentUpload
+                  taskId={task.id}
+                  onUploadComplete={onTaskUpdated}
+                  buttonText="ファイル追加"
+                  buttonVariant="outline"
+                />
               </div>
-              <Button variant="link" className="mt-2">
-                <Download className="h-4 w-4 mr-2" />
-                ダウンロード
-              </Button>
+              <FilePreview
+                attachments={task.attachments || []}
+                onDelete={async (attachmentId) => {
+                  try {
+                    await uploadsApi.deleteAttachment(attachmentId);
+                    toast.success("ファイルを削除しました");
+                    onTaskUpdated();
+                  } catch (error: any) {
+                    toast.error(error.response?.data?.error || "削除に失敗しました");
+                  }
+                }}
+                canDelete={canEdit}
+              />
             </div>
           </div>
 
           {/* Right side - Comments */}
           <div className="space-y-4">
             <h3 className="font-bold">コメント</h3>
-            <Textarea
-              placeholder="@コメント入力"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={3}
-            />
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1">
-                <Upload className="h-4 w-4 mr-2" />
-                アップロード
-              </Button>
-              <Button>送信</Button>
-            </div>
 
-            <div className="space-y-3">
-              {task.comments && task.comments.length > 0 ? (
-                task.comments.map((comment) => (
-                  <div key={comment.id} className="border-b pb-3">
-                    <div className="text-xs text-gray-500 mb-1">
-                      {new Date(comment.createdAt).toLocaleString("ja-JP")}
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-500 text-white text-sm flex items-center justify-center font-medium">
-                        {comment.user
-                          ? getAssigneeInitials(comment.user.firstname, comment.user.lastname)
-                          : "??"}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm">{comment.content}</p>
-                        {comment.attachments && comment.attachments.length > 0 && (
-                          <div className="mt-1">
-                            {comment.attachments.map((attachment) => (
-                              <Button
-                                key={attachment.id}
-                                variant="link"
-                                size="sm"
-                                className="p-0 h-auto text-xs"
-                              >
-                                {attachment.fileName}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
+            <CommentInput
+              taskId={task.id}
+              onCommentAdded={handleCommentAdded}
+              projectMembers={projectMembers}
+            />
+
+            <div className="border-t pt-4">
+              {loadingComments ? (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  コメント機能は近日公開予定です
+                  読み込み中...
                 </p>
+              ) : (
+                <CommentList
+                  comments={comments}
+                  onDeleteComment={handleDeleteComment}
+                  onRefresh={fetchComments}
+                  currentUserId={user?.id || ""}
+                  canDeleteAny={permissions.isProjectManagerOrAbove(task.projectId)}
+                />
               )}
             </div>
           </div>

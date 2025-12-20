@@ -2,6 +2,7 @@ import { ProjectQueryService } from '../../services/projects/ProjectQueryService
 import type { AuthContext } from '../../types';
 
 export async function listProjectsHandler(c: AuthContext) {
+  const profiler = c.get('profiler');
   const db = c.get('db');
   const user = c.get('user');
   const projectQueryService = new ProjectQueryService(db, c.env);
@@ -10,6 +11,7 @@ export async function listProjectsHandler(c: AuthContext) {
   const page = c.req.query('page');
   const limit = c.req.query('limit');
   const organizationId = c.req.query('organizationId');
+  profiler.checkpoint('Handler setup');
 
   // Check if user is System Admin
   const isSystemAdmin = user?.systemRoleCode === 1;
@@ -21,6 +23,7 @@ export async function listProjectsHandler(c: AuthContext) {
     isSystemAdmin,
     organizationId
   );
+  profiler.checkpoint('listProjects query');
 
   if (!result.success) {
     return c.json({ error: result.error }, 500);

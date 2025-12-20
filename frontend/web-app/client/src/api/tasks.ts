@@ -4,6 +4,7 @@ import type {
   TaskWithDetails,
   TaskWithComments,
   TaskComment,
+  TaskCommentWithUser,
 } from '../types/entities';
 import type {
   PaginatedResponse,
@@ -107,7 +108,7 @@ export const tasksApi = {
   /**
    * List all comments for a task
    */
-  listComments: async (taskId: string): Promise<{ comments: TaskComment[] }> => {
+  listComments: async (taskId: string): Promise<{ comments: TaskCommentWithUser[] }> => {
     const response = await apiClient.get(`/api/tasks/${taskId}/comments`);
     return response.data;
   },

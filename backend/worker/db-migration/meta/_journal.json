@@ -36,6 +36,13 @@
       "when": 1764845788308,
       "tag": "20251204105628_add_tasks_and_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1765880812782,
+      "tag": "20251216102652_add_organization_members_index",
+      "breakpoints": true
     }
   ]
 }

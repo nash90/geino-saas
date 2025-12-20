@@ -1,4 +1,5 @@
 import { FileUploadService } from '../../services/uploads/FileUploadService';
+import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import type { AuthContext } from '../../types';
 
 export async function deleteAttachmentHandler(c: AuthContext) {
@@ -9,14 +10,31 @@ export async function deleteAttachmentHandler(c: AuthContext) {
   // Get attachment ID from path parameter
   const attachmentId = c.req.param('attachmentId');
 
-  // Call service layer (permission check is done inside the service - owner or PM+)
-  const result = await fileUploadService.deleteAttachment(user.id, attachmentId);
+  // Get attachment with task context
+  const contextResult = await fileUploadService.getAttachmentWithTaskContext(attachmentId);
+  if (!contextResult.success) {
+    const statusCode = contextResult.code === 'NOT_FOUND' ? 404 : 500;
+    return c.json({ error: contextResult.error }, statusCode);
+  }
+
+  const { attachment, task } = contextResult.data!;
+
+  // Check if user is the uploader (can always delete own attachments)
+  const isUploader = attachment.uploadedBy === user.id;
+
+  if (!isUploader) {
+    // Check if user can edit tasks (PM or above)
+    const canEdit = await AuthorizationService.canEditTask(db, user, task as any);
+    if (!canEdit) {
+      return c.json({ error: 'Only the uploader or Project Managers can delete attachments' }, 403);
+    }
+  }
+
+  // Call service layer to delete
+  const result = await fileUploadService.deleteAttachment(attachmentId);
 
   if (!result.success) {
-    const statusCode = result.code === 'NOT_FOUND' ? 404 :
-                      result.code === 'FORBIDDEN' ? 403 :
-                      result.code === 'INVALID_STATE' ? 500 : 500;
-    return c.json({ error: result.error }, statusCode);
+    return c.json({ error: result.error }, 500);
   }
 
   return c.json({ message: 'Attachment deleted successfully' });

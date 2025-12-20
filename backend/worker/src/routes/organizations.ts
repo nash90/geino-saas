@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { authenticate, requireSystemAdmin } from '../middleware/auth';
-import type { Env, AuthUser } from '../types';
-import type { DbClient } from '../db/client';
+import type { PreAuthEnv } from '../types';
 import { createOrganizationHandler } from '../handlers/organizations/createOrganizationHandler';
 import { listOrganizationsHandler } from '../handlers/organizations/listOrganizationsHandler';
 import { getOrganizationHandler } from '../handlers/organizations/getOrganizationHandler';
@@ -10,7 +9,7 @@ import { deleteOrganizationHandler } from '../handlers/organizations/deleteOrgan
 import { addMemberHandler } from '../handlers/organizations/addMemberHandler';
 import { removeMemberHandler } from '../handlers/organizations/removeMemberHandler';
 
-const organizationsRoute = new Hono<{ Bindings: Env; Variables: { db: DbClient; user?: AuthUser } }>();
+const organizationsRoute = new Hono<PreAuthEnv>();
 
 // Middleware to authenticate all organization routes
 organizationsRoute.use('*', async (c, next) => {

@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import type { DbClient } from '../db/client';
+import type { Profiler } from '../lib/profiler';
 
 /**
  * Environment variables interface
@@ -11,6 +12,11 @@ export interface Env {
   DATABASE_URL: string;
   APP_URL?: string;
   ATTACHMENTS_BUCKET: R2Bucket;
+  // R2 credentials for pre-signed URLs
+  R2_ACCOUNT_ID?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_BUCKET_NAME?: string;
 }
 
 /**
@@ -32,6 +38,7 @@ export type BaseContext = Context<{
   Bindings: Env;
   Variables: {
     db: DbClient;
+    profiler: Profiler;
   };
 }>;
 
@@ -44,6 +51,7 @@ export type AuthContext = Context<{
   Variables: {
     db: DbClient;
     user: AuthUser;
+    profiler: Profiler;
   };
 }>;
 
@@ -56,5 +64,17 @@ export type OptionalAuthContext = Context<{
   Variables: {
     db: DbClient;
     user?: AuthUser;
+    profiler: Profiler;
   };
 }>;
+
+/**
+ * Type helpers for Hono route definitions
+ * These extract the generic parameters from Context types
+ */
+export type HonoEnv<T extends Context<any>> = T extends Context<infer E> ? E : never;
+
+// Convenience types for route definitions
+export type BaseEnv = HonoEnv<BaseContext>;
+export type AuthEnv = HonoEnv<AuthContext>;
+export type PreAuthEnv = HonoEnv<OptionalAuthContext>;

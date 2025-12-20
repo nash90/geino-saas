@@ -11,14 +11,19 @@ export async function addCommentHandler(c: AuthContext) {
 
   // Parse request body
   const body = await c.req.json();
-  const { content } = body;
+  const { content, attachmentIds } = body;
 
   if (!content) {
     return c.json({ error: 'Comment content is required' }, 400);
   }
 
   // Call service layer (permission check is done inside the service)
-  const result = await taskCommentService.addComment(taskId, user.id, content);
+  const result = await taskCommentService.addComment(
+    taskId,
+    user.id,
+    content,
+    attachmentIds
+  );
 
   if (!result.success) {
     const statusCode = result.code === 'NOT_FOUND' ? 404 :

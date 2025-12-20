@@ -10,11 +10,12 @@ import type {
 
 export const uploadsApi = {
   // ============================================================================
-  // Upload Operations
+  // Upload Operations (Three-Step Pre-Signed URL Approach)
   // ============================================================================
 
   /**
-   * Step 1: Generate signed upload URL from backend
+   * Step 1: Generate pre-signed upload URL from backend
+   * This URL allows direct client-to-R2 upload, bypassing Worker size limits
    */
   generateUploadUrl: async (
     data: GenerateUploadUrlRequest
@@ -27,12 +28,35 @@ export const uploadsApi = {
    * Step 2: Upload file directly to R2 using signed URL
    * This bypasses the backend and uploads directly to Cloudflare R2
    */
-  uploadFile: async (uploadUrl: string, file: File): Promise<void> => {
-    await axios.put(uploadUrl, file, {
-      headers: {
-        'Content-Type': file.type,
-      },
-    });
+  uploadFile: async (
+    uploadUrl: string,
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<void> => {
+    try {
+      const response = await axios.put(uploadUrl, file, {
+        headers: {
+          'Content-Type': file.type,
+        },
+        onUploadProgress: onProgress
+          ? (progressEvent) => {
+              if (progressEvent.total) {
+                const percentCompleted = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total
+                );
+                onProgress(percentCompleted);
+              }
+            }
+          : undefined,
+      });
+
+      // Verify upload was successful
+      if (response.status !== 200) {
+        throw new Error(`Upload failed with status ${response.status}: ${response.statusText}`);
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to upload file to R2: ${error.message}`);
+    }
   },
 
   /**
@@ -40,9 +64,9 @@ export const uploadsApi = {
    */
   confirmUpload: async (
     data: ConfirmUploadRequest
-  ): Promise<{ message: string; attachment: Attachment }> => {
+  ): Promise<Attachment> => {
     const response = await apiClient.post('/api/uploads/confirm', data);
-    return response.data;
+    return response.data.attachment;
   },
 
   /**
@@ -87,7 +111,7 @@ export const uploadsApi = {
     await uploadsApi.uploadFile(uploadUrl, file);
 
     // Step 3: Confirm upload and create attachment record
-    const { attachment } = await uploadsApi.confirmUpload({
+    const attachment = await uploadsApi.confirmUpload({
       uploadId,
       fileKey,
       fileName: file.name,
@@ -102,17 +126,12 @@ export const uploadsApi = {
 
   /**
    * Download an attachment
-   * Gets the signed URL and triggers download
+   * Gets the signed URL and opens in new tab
    */
   downloadAttachment: async (attachmentId: string, fileName: string): Promise<void> => {
     const downloadUrl = await uploadsApi.getDownloadUrl(attachmentId);
 
-    // Create temporary link and trigger download
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Open in new tab to prevent user from navigating away
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
   },
 };
