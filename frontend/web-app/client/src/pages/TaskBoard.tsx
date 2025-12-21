@@ -15,6 +15,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import { projectsApi } from "@/api/projects";
+import { useLocation } from "wouter";
 import type { TaskWithDetails, ProjectWithMembers } from "@/types/entities";
 import { TaskStatus } from "@/types/entities";
 import {
@@ -44,6 +45,7 @@ const columnToStatusCode: Record<ColumnType, number> = {
 export default function TaskBoard() {
   const { user, projects } = useAuth();
   const permissions = usePermissions();
+  const [, setLocation] = useLocation();
 
   const [selectedProjects, setSelectedProjects] = useState<string[]>(() => {
     const stored = localStorage.getItem('taskboard_selected_projects');
@@ -264,8 +266,8 @@ export default function TaskBoard() {
   };
 
   const handleTaskClick = async (task: TaskWithDetails) => {
-    setIsDetailDialogOpen(true);
-    await loadTaskDetails(task.id);
+    // Navigate to task detail page
+    setLocation(`/taskboard/${task.id}`);
   };
 
   const handleTaskUpdated = async () => {

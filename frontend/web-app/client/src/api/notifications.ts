@@ -14,6 +14,7 @@ export interface Notification {
   metadata?: string;
   readAt?: string;
   createdAt: string;
+  taskTitle?: string; // Task title from joined tasks table
 }
 
 export const notificationsApi = {

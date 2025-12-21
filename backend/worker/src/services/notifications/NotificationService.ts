@@ -1,6 +1,6 @@
 import { BaseService } from '../base/BaseService';
 import type { ServiceResponse } from '@/types';
-import { notifications } from '@/db/schema';
+import { notifications, tasks } from '@/db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 export interface CreateNotificationParams {
@@ -46,8 +46,24 @@ export class NotificationService extends BaseService {
       }
 
       const userNotifications = await this.db
-        .select()
+        .select({
+          id: notifications.id,
+          userId: notifications.userId,
+          typeCode: notifications.typeCode,
+          categoryCode: notifications.categoryCode,
+          title: notifications.title,
+          message: notifications.message,
+          taskId: notifications.taskId,
+          projectId: notifications.projectId,
+          organizationId: notifications.organizationId,
+          commentId: notifications.commentId,
+          metadata: notifications.metadata,
+          readAt: notifications.readAt,
+          createdAt: notifications.createdAt,
+          taskTitle: tasks.title,
+        })
         .from(notifications)
+        .leftJoin(tasks, eq(notifications.taskId, tasks.id))
         .where(and(...conditions))
         .orderBy(desc(notifications.createdAt))
         .limit(limit)

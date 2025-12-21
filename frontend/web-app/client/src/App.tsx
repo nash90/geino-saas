@@ -8,9 +8,10 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import DashboardLayout from "./components/DashboardLayout";
 import CalendarView from "./pages/CalendarView";
 import Projects from "./pages/Projects";
-import Invites from "./pages/Invites";
+// import Invites from "./pages/Invites";
 import TasksProgress from "./pages/TasksProgress";
 import TaskBoard from "./pages/TaskBoard";
+import TaskDetail from "./pages/TaskDetail";
 import SystemAdmin from "./pages/SystemAdmin";
 import OrganizationsList from "./pages/admin/OrganizationsList";
 import Login from "./pages/Login";
@@ -73,13 +74,13 @@ function Router() {
               </DashboardLayout>
             )}
           </Route>
-          <Route path="/invites">
+          {/* <Route path="/invites">
             {() => (
               <DashboardLayout>
                 <Invites />
               </DashboardLayout>
             )}
-          </Route>
+          </Route> */}
           <Route path="/calendar">
             {() => (
               <DashboardLayout>
@@ -98,6 +99,13 @@ function Router() {
             {() => (
               <DashboardLayout>
                 <TaskBoard />
+              </DashboardLayout>
+            )}
+          </Route>
+          <Route path="/taskboard/:taskId">
+            {() => (
+              <DashboardLayout>
+                <TaskDetail />
               </DashboardLayout>
             )}
           </Route>

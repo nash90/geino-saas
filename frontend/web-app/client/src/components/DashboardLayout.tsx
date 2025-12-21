@@ -1,12 +1,12 @@
-import { Bell, Building2, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, UserPlus } from "lucide-react";
+import { Bell, Building2, Calendar, ChevronLeft, FolderKanban, Home, LayoutDashboard, ListTodo, LogOut, Settings, Loader2 } from "lucide-react";
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationsApi, type Notification } from '@/api/notifications';
-import { NotificationList } from '@/components/notifications/NotificationList';
 import { toast } from 'sonner';
+import { tasksApi } from '@/api/tasks';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -79,6 +79,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       await notificationsApi.markAsRead(notificationId);
       loadBellNotifications();
       loadUnreadCount();
+      loadTaskProgressUnreadCount();
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -89,6 +90,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       await notificationsApi.markAllAsRead('bell');
       loadBellNotifications();
       loadUnreadCount();
+      loadTaskProgressUnreadCount();
       toast.success('すべての通知を既読にしました');
     } catch (error) {
       console.error('Failed to mark all as read:', error);
@@ -96,11 +98,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
+  const handleTaskClick = async (taskId: string) => {
+    try {
+      // Navigate to task detail page
+      setLocation(`/taskboard/${taskId}`);
+      // Close notification dialog
+      setNotificationOpen(false);
+    } catch (error) {
+      console.error('Failed to navigate to task:', error);
+    }
+  };
+
   const menuItems = [
     { path: "/", label: "ホーム", icon: Home },
     { path: "/taskboard", label: "タスクボード", icon: LayoutDashboard },
     { path: "/projects", label: "プロジェクト一覧", icon: FolderKanban },
-    { path: "/invites", label: "招待アカウント一覧", icon: UserPlus },
+    // { path: "/invites", label: "招待アカウント一覧", icon: UserPlus },
     { path: "/tasks-progress", label: "進捗ありタスク", icon: ListTodo },
     ...(isSystemAdmin || isOrganizationManager ? [
       { path: "/admin/organizations", label: "組織管理", icon: Building2 },
@@ -133,7 +146,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Menu Items */}
         <nav className="flex-1 px-3">
-          {menuItems.map((item, index) => {
+          {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
             return (
@@ -185,9 +198,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           >
             <Bell className="w-5 h-5" />
             {bellUnreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                {bellUnreadCount > 9 ? '9+' : bellUnreadCount}
-              </span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             )}
           </Button>
 
@@ -218,7 +229,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span>通知</span>
+              <span>通知一覧</span>
               {bellUnreadCount > 0 && (
                 <Button
                   variant="ghost"
@@ -231,13 +242,62 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               )}
             </DialogTitle>
           </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {loadingNotifications ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : bellNotifications.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                通知はありません
+              </div>
+            ) : (
+              bellNotifications.map((notification) => {
+                return (
+                  <div
+                    key={notification.id}
+                    className={`p-3 rounded-lg border cursor-pointer ${
+                      notification.readAt ? "bg-gray-50" : "bg-blue-50 border-blue-200"
+                    }`}
+                    onClick={() => {
+                      if (!notification.readAt) {
+                        handleMarkAsRead(notification.id);
+                      }
+                    }}
+                  >
+                    {/* Line 1: Title | Date Time */}
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-sm font-medium flex-1">{notification.title}</p>
+                      <p className="text-xs text-gray-400 whitespace-nowrap">
+                        {new Date(notification.createdAt).toLocaleString('ja-JP', {
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
 
-          <div className="max-h-[400px] overflow-y-auto">
-            <NotificationList
-              notifications={bellNotifications}
-              loading={loadingNotifications}
-              onMarkAsRead={handleMarkAsRead}
-            />
+                    {/* Line 2: Task name link */}
+                    {notification.taskId && notification.taskTitle && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Mark as read when clicking task link
+                          if (!notification.readAt) {
+                            handleMarkAsRead(notification.id);
+                          }
+                          handleTaskClick(notification.taskId!);
+                        }}
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {notification.taskTitle}
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </DialogContent>
       </Dialog>
