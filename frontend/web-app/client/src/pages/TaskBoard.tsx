@@ -7,6 +7,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  closestCorners,
 } from "@dnd-kit/core";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -168,6 +169,28 @@ export default function TaskBoard() {
     setActiveId(event.active.id as string);
   };
 
+  // Custom collision detection that prioritizes columns over tasks
+  const customCollisionDetection = (args: any) => {
+    // Get all collisions
+    const closestCornersCollisions = closestCorners(args);
+
+    // Valid column IDs
+    const validColumns = ['hold', 'todo', 'inProgress', 'done'];
+
+    // Check if there's a column collision
+    const columnCollision = closestCornersCollisions.find(collision =>
+      validColumns.includes(String(collision.id))
+    );
+
+    // If there's a column collision, return only that (for cross-column moves)
+    if (columnCollision) {
+      return [columnCollision];
+    }
+
+    // Otherwise, allow task collisions (for same-column reordering)
+    return closestCornersCollisions;
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
@@ -178,6 +201,14 @@ export default function TaskBoard() {
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
 
+    // Valid column IDs
+    const validColumns = ['hold', 'todo', 'inProgress', 'done'];
+
+    // Only process if dropped on a column (not on another task)
+    if (!validColumns.includes(String(over.id))) {
+      return;
+    }
+
     // Check permission - must be able to change task status (PM+ only)
     if (!permissions.canChangeTaskStatus(activeTask)) {
       toast.error("You don't have permission to change task status. Only Project Managers can change task status.");
@@ -186,6 +217,11 @@ export default function TaskBoard() {
 
     const targetColumn = over.id as ColumnType;
     const newStatusCode = columnToStatusCode[targetColumn];
+
+    // Validate that we have a valid status code
+    if (newStatusCode === undefined || newStatusCode === null) {
+      return;
+    }
 
     if (activeTask.statusCode === newStatusCode) return;
 
@@ -292,6 +328,7 @@ export default function TaskBoard() {
 
           <DndContext
             sensors={sensors}
+            collisionDetection={customCollisionDetection}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
