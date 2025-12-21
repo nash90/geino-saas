@@ -3,6 +3,7 @@
  * Creates notification records and sends emails
  */
 
+import { Resend } from 'resend';
 import { NotificationService } from '@/services/notifications/NotificationService';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -44,7 +45,7 @@ async function createNotificationRecord(
 }
 
 /**
- * Send email notification via MailChannels
+ * Send email notification via Resend
  */
 async function sendEmailNotification(
   typeCode: number,
@@ -63,32 +64,31 @@ async function sendEmailNotification(
   const appUrl = env.APP_URL || 'http://localhost:3000';
   const emailContent = buildEmailContent(typeCode, payload, recipient, appUrl);
 
-  // Send via MailChannels
-  await fetch('https://api.mailchannels.net/tx/v1/send', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [
-        {
-          to: [{
-            email: recipient.email,
-            name: `${recipient.lastname} ${recipient.firstname}`
-          }],
-        },
-      ],
-      from: {
-        email: env.FROM_EMAIL,
-        name: env.FROM_NAME,
-      },
-      subject: emailContent.subject,
-      content: [
-        {
-          type: 'text/html',
-          value: emailContent.html,
-        },
-      ],
-    }),
+  console.log('📧 About to send email via Resend:', {
+    to: recipient.email,
+    subject: emailContent.subject,
+    from: env.FROM_EMAIL,
+    typeCode
   });
+
+  try {
+    // Initialize Resend with API key
+    const resend = new Resend(env.RESEND_API_KEY);
+
+    // Send via Resend
+    const { data, error } = await resend.emails.send({
+      from: `${env.FROM_NAME} <${env.FROM_EMAIL}>`,
+      to: [recipient.email],
+      subject: emailContent.subject,
+      html: emailContent.html,
+    });
+
+    if (error) {
+      console.error('❌ Resend error:', error);
+    } else {
+      console.log('✅ Email sent successfully to:', recipient.email, 'ID:', data?.id);
+    }
+  } catch (error) {
+    console.error('❌ Failed to send email:', error);
+  }
 }

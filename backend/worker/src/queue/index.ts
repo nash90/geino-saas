@@ -13,10 +13,13 @@ export async function queue(
   batch: MessageBatch<NotificationEvent>,
   env: Env
 ): Promise<void> {
+  console.log('🔔 Queue consumer triggered! Processing', batch.messages.length, 'message(s)');
+
   const db = createDbClient(env.DATABASE_URL);
   const notificationService = new NotificationService(db, env);
 
     for (const message of batch.messages) {
+      console.log('📨 Processing message:', { typeCode: message.body.typeCode, payload: message.body.payload });
       try {
         const { typeCode, payload } = message.body;
 

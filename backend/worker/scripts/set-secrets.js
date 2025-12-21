@@ -43,7 +43,10 @@ const SECRETS_TO_UPLOAD = [
   'R2_ACCOUNT_ID',
   'R2_ACCESS_KEY_ID',
   'R2_SECRET_ACCESS_KEY',
-  'R2_BUCKET_NAME'
+  'R2_BUCKET_NAME',
+  'FROM_EMAIL',
+  'FROM_NAME',
+  'RESEND_API_KEY',
 ];
 
 // Non-sensitive variables (already in wrangler config)

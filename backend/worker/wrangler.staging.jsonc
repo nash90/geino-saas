@@ -24,18 +24,7 @@
 		"ENVIRONMENT": "staging"
 	},
 
-        /**
-         * Routes - Bind to custom domain
-         * You need to add this route in Cloudflare Dashboard:
-         * Workers & Pages > geino-saas-staging > Settings > Triggers > Routes
-         * Add: api-geinosaas.yamacity.com/*
-         */
-        "routes": [
-                {
-                        "pattern": "api-geinosaas.yamacity.com/*",
-                        "zone_name": "yamacity.com"
-                }
-        ],	/**
+	/**
 	 * R2 Buckets (for file uploads)
 	 * Create bucket first: wrangler r2 bucket create geino-saas-staging-uploads
 	 */

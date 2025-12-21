@@ -21,7 +21,8 @@ export interface Env {
   // Queue binding for notifications
   NOTIFICATIONS_QUEUE: Queue;
 
-  // Email settings for MailChannels
+  // Email settings for Resend
+  RESEND_API_KEY: string;
   FROM_EMAIL: string;
   FROM_NAME: string;
 }

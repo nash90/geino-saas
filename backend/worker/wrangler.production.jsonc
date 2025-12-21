@@ -34,20 +34,6 @@
 	},
 
 	/**
-	 * Routes - Bind to client's custom domain
-	 * UPDATE "zone_name" and "pattern" with client's domain
-	 *
-	 * You need to add this route in client's Cloudflare Dashboard:
-	 * Workers & Pages > geino-saas-prod > Settings > Triggers > Routes
-	 */
-	"routes": [
-		{
-			"pattern": "api.client-domain.com/*",
-			"zone_name": "client-domain.com"
-		}
-	],
-
-	/**
 	 * R2 Buckets (for file uploads)
 	 * Create bucket in client's account first:
 	 * wrangler r2 bucket create geino-saas-prod-uploads
