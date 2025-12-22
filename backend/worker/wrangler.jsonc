@@ -17,7 +17,8 @@
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
 	"vars": {
-		"APP_URL": "http://localhost:3000"
+		"APP_URL": "http://localhost:3000",
+		"ENABLE_PROFILING": "true"
 	},
 	/**
 	 * R2 Buckets

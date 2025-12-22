@@ -30,7 +30,8 @@
 	 */
 	"vars": {
 		"APP_URL": "https://app.client-domain.com",
-		"ENVIRONMENT": "production"
+		"ENVIRONMENT": "production",
+		"ENABLE_PROFILING": "false"
 	},
 
 	/**

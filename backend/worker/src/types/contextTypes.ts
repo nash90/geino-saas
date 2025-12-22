@@ -25,6 +25,9 @@ export interface Env {
   RESEND_API_KEY: string;
   FROM_EMAIL: string;
   FROM_NAME: string;
+
+  // Performance profiling (optional, "true" to enable)
+  ENABLE_PROFILING?: string;
 }
 
 /**

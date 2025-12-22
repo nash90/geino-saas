@@ -21,7 +21,8 @@
 	 */
 	"vars": {
 		"APP_URL": "https://geinosaas.yamacity.com",
-		"ENVIRONMENT": "staging"
+		"ENVIRONMENT": "staging",
+		"ENABLE_PROFILING": "false"
 	},
 
 	/**
