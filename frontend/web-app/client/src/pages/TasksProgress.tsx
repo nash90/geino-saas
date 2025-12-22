@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { notificationsApi, type Notification } from '@/api/notifications';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { toast } from 'sonner';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,10 @@ import { useLocation } from 'wouter';
 export default function TasksProgress() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [, setLocation] = useLocation();
+
+  // Use notification context for unread count
+  const { taskProgressUnreadCount, markAsRead: contextMarkAsRead, markAllAsRead: contextMarkAllAsRead } = useNotifications();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -18,7 +21,6 @@ export default function TasksProgress() {
 
   useEffect(() => {
     loadNotifications();
-    loadUnreadCount();
   }, [currentPage]);
 
   const loadNotifications = async () => {
@@ -45,20 +47,10 @@ export default function TasksProgress() {
     }
   };
 
-  const loadUnreadCount = async () => {
-    try {
-      const data = await notificationsApi.getUnreadCount('task_progress');
-      setUnreadCount(data.count);
-    } catch (error) {
-      console.error('Failed to load unread count:', error);
-    }
-  };
-
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      await notificationsApi.markAsRead(notificationId);
+      await contextMarkAsRead(notificationId, 'task_progress');
       loadNotifications();
-      loadUnreadCount();
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -66,9 +58,8 @@ export default function TasksProgress() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsApi.markAllAsRead('task_progress');
+      await contextMarkAllAsRead('task_progress');
       loadNotifications();
-      loadUnreadCount();
       toast.success('すべての通知を既読にしました');
     } catch (error) {
       console.error('Failed to mark all as read:', error);
@@ -85,7 +76,7 @@ export default function TasksProgress() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">進捗ありタスク</h1>
-        {unreadCount > 0 && (
+        {taskProgressUnreadCount > 0 && (
           <Button onClick={handleMarkAllAsRead}>
             すべて既読にする
           </Button>

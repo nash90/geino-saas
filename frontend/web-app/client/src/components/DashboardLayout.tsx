@@ -4,9 +4,8 @@ import { Link, useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { notificationsApi, type Notification } from '@/api/notifications';
+import { useNotifications } from "@/contexts/NotificationContext";
 import { toast } from 'sonner';
-import { tasksApi } from '@/api/tasks';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -18,13 +17,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const { logout, user, organizations } = useAuth();
 
-  // Bell notification state
-  const [bellNotifications, setBellNotifications] = useState<Notification[]>([]);
-  const [bellUnreadCount, setBellUnreadCount] = useState(0);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
-
-  // Task progress notification state
-  const [taskProgressUnreadCount, setTaskProgressUnreadCount] = useState(0);
+  // Use notification context
+  const {
+    bellNotifications,
+    bellUnreadCount,
+    loadingBellNotifications,
+    loadBellNotifications,
+    taskProgressUnreadCount,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications();
 
   // System admin check: systemRoleCode = 1
   const isSystemAdmin = user?.systemRoleCode === 1;
@@ -38,48 +40,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [notificationOpen]);
 
-  // Load unread count on mount
-  useEffect(() => {
-    loadUnreadCount();
-    loadTaskProgressUnreadCount();
-  }, []);
-
-  const loadBellNotifications = async () => {
-    setLoadingNotifications(true);
-    try {
-      const data = await notificationsApi.list('bell', 20, 0);
-      setBellNotifications(data.notifications);
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    } finally {
-      setLoadingNotifications(false);
-    }
-  };
-
-  const loadUnreadCount = async () => {
-    try {
-      const data = await notificationsApi.getUnreadCount('bell');
-      setBellUnreadCount(data.count);
-    } catch (error) {
-      console.error('Failed to load unread count:', error);
-    }
-  };
-
-  const loadTaskProgressUnreadCount = async () => {
-    try {
-      const data = await notificationsApi.getUnreadCount('task_progress');
-      setTaskProgressUnreadCount(data.count);
-    } catch (error) {
-      console.error('Failed to load task progress unread count:', error);
-    }
-  };
-
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      await notificationsApi.markAsRead(notificationId);
-      loadBellNotifications();
-      loadUnreadCount();
-      loadTaskProgressUnreadCount();
+      await markAsRead(notificationId, 'bell');
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -87,10 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsApi.markAllAsRead('bell');
-      loadBellNotifications();
-      loadUnreadCount();
-      loadTaskProgressUnreadCount();
+      await markAllAsRead('bell');
       toast.success('すべての通知を既読にしました');
     } catch (error) {
       console.error('Failed to mark all as read:', error);
@@ -243,7 +203,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {loadingNotifications ? (
+            {loadingBellNotifications ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
               </div>
