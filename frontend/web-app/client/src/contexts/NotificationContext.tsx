@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { notificationsApi, type Notification } from '@/api/notifications';
+import { useAuth } from './AuthContext';
 
 interface NotificationContextType {
   // Bell notifications
@@ -20,15 +21,24 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [bellNotifications, setBellNotifications] = useState<Notification[]>([]);
   const [bellUnreadCount, setBellUnreadCount] = useState(0);
   const [taskProgressUnreadCount, setTaskProgressUnreadCount] = useState(0);
   const [loadingBellNotifications, setLoadingBellNotifications] = useState(false);
 
-  // Load unread counts on mount
+  // Load unread counts when user changes (login/logout)
   useEffect(() => {
-    loadUnreadCounts();
-  }, []);
+    if (user) {
+      // User logged in - load their notification counts
+      loadUnreadCounts();
+    } else {
+      // User logged out - clear all notification state
+      setBellNotifications([]);
+      setBellUnreadCount(0);
+      setTaskProgressUnreadCount(0);
+    }
+  }, [user]);
 
   const loadUnreadCounts = async () => {
     try {
