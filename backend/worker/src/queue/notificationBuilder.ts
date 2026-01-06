@@ -112,6 +112,24 @@ export async function buildNotificationData(
       };
 
     default:
-      throw new Error(`Unknown notification type code: ${typeCode}`);
+      // Log unknown notification types but don't throw error to prevent queue blocking
+      // Only log type code and basic info, not full payload (may contain sensitive data)
+      console.warn('Unknown notification type code:', typeCode);
+      
+      // Return a generic notification instead of throwing
+      return {
+        userId: recipientId,
+        typeCode,
+        categoryCode: NotificationCategory.BELL.code,
+        title: '通知',
+        message: '新しい通知があります',
+        taskId: payload.taskId,
+        projectId: payload.projectId,
+        organizationId: payload.organizationId,
+        metadata: { 
+          actorUserId: payload.actorUserId,
+          unknownTypeCode: typeCode,
+        },
+      };
   }
 }

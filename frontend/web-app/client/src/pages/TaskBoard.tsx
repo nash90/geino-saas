@@ -25,6 +25,7 @@ import {
   TaskDetailDialog,
 } from "@/components/tasks";
 import { ProjectMultiSelect } from "@/components/ProjectMultiSelect";
+import { devError } from "@/lib/logger";
 
 type ColumnType = "hold" | "todo" | "inProgress" | "done";
 
@@ -52,7 +53,10 @@ export default function TaskBoard() {
     if (stored) {
       try {
         return JSON.parse(stored);
-      } catch {
+      } catch (error) {
+        devError('Failed to parse taskboard_selected_projects:', error);
+        // Clear corrupted data
+        localStorage.removeItem('taskboard_selected_projects');
         return [];
       }
     }

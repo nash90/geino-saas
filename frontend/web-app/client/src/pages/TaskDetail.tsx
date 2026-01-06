@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskDetailDialog } from '@/components/tasks';
-import type { ProjectWithMembers } from '@/types/entities';
+import type { ProjectWithMembers, TaskWithComments } from '@/types/entities';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function TaskDetail() {
@@ -15,7 +15,7 @@ export default function TaskDetail() {
   const permissions = usePermissions();
 
   const taskId = params.taskId;
-  const [task, setTask] = useState<any>(null);
+  const [task, setTask] = useState<TaskWithComments | null>(null);
   const [projectDetails, setProjectDetails] = useState<ProjectWithMembers | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
