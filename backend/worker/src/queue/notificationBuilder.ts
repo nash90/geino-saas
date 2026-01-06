@@ -33,17 +33,6 @@ export async function buildNotificationData(
         metadata: { actorUserId: payload.actorUserId },
       };
 
-    case NotificationType.PROJECT_MEMBER_ADDED.code:
-      return {
-        userId: recipientId,
-        typeCode,
-        categoryCode: NotificationCategory.BELL.code,
-        title: 'プロジェクトに追加されました',
-        message: `${actorName}さんがあなたをプロジェクトに追加しました`,
-        projectId: payload.projectId,
-        metadata: { actorUserId: payload.actorUserId, roleCode: payload.roleCode },
-      };
-
     case NotificationType.ORGANIZATION_MANAGER_ASSIGNED.code:
       return {
         userId: recipientId,
@@ -107,28 +96,19 @@ export async function buildNotificationData(
         },
       };
 
-    case NotificationType.TASK_DETAIL_CHANGED.code:
-      return {
-        userId: recipientId,
-        typeCode,
-        categoryCode: NotificationCategory.TASK_PROGRESS.code,
-        title: 'タスクの詳細が変更されました',
-        message: `${actorName}さんがタスクの詳細を変更しました`,
-        taskId: payload.taskId,
-        projectId: payload.projectId,
-        metadata: { actorUserId: payload.actorUserId },
-      };
-
     case NotificationType.TASK_UPDATED.code:
       return {
         userId: recipientId,
         typeCode,
         categoryCode: NotificationCategory.TASK_PROGRESS.code,
-        title: 'タスクが更新されました',
-        message: `${actorName}さんがあなたの作成したタスクを更新しました`,
+        title: 'タスクの詳細が更新されました',
+        message: `${actorName}さんがタスクの詳細を更新しました`,
         taskId: payload.taskId,
         projectId: payload.projectId,
-        metadata: { actorUserId: payload.actorUserId },
+        metadata: { 
+          actorUserId: payload.actorUserId,
+          changedFields: payload.changedFields,
+        },
       };
 
     default:

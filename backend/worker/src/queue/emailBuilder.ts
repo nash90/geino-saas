@@ -26,17 +26,6 @@ export function buildEmailContent(
         `,
       };
 
-    case NotificationType.PROJECT_MEMBER_ADDED.code:
-      return {
-        subject: 'プロジェクトに追加されました - Geino SaaS',
-        html: `
-          <h2>プロジェクトに追加されました</h2>
-          <p>${recipientName}さん、</p>
-          <p>新しいプロジェクトのメンバーに追加されました。</p>
-          <p><a href="${appUrl}/projects">プロジェクトを確認する</a></p>
-        `,
-      };
-
     case NotificationType.ORGANIZATION_MANAGER_ASSIGNED.code:
       return {
         subject: '組織マネージャーに任命されました - Geino SaaS',
@@ -94,24 +83,13 @@ export function buildEmailContent(
         `,
       };
 
-    case NotificationType.TASK_DETAIL_CHANGED.code:
-      return {
-        subject: 'タスクの詳細が変更されました - Geino SaaS',
-        html: `
-          <h2>タスクの詳細が変更されました</h2>
-          <p>${recipientName}さん、</p>
-          <p>割り当てられたタスクの詳細が変更されました。</p>
-          <p><a href="${appUrl}/taskboard">タスクを確認する</a></p>
-        `,
-      };
-
     case NotificationType.TASK_UPDATED.code:
       return {
-        subject: 'タスクが更新されました - Geino SaaS',
+        subject: 'タスクの詳細が更新されました - Geino SaaS',
         html: `
-          <h2>タスクが更新されました</h2>
+          <h2>タスクの詳細が更新されました</h2>
           <p>${recipientName}さん、</p>
-          <p>あなたの作成したタスクが更新されました。</p>
+          <p>プロジェクトのタスクの詳細が更新されました。</p>
           <p><a href="${appUrl}/taskboard">タスクを確認する</a></p>
         `,
       };

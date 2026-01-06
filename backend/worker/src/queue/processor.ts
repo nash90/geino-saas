@@ -13,6 +13,11 @@ import { buildEmailContent } from './emailBuilder';
 import type { NotificationEventPayload } from './types';
 
 /**
+ * Sleep utility for rate limiting
+ */
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
  * Process a single notification event for a recipient
  */
 export async function processNotificationEvent(
@@ -75,6 +80,10 @@ async function sendEmailNotification(
     // Initialize Resend with API key
     const resend = new Resend(env.RESEND_API_KEY);
 
+    // Rate limiting: Resend allows 2 req/sec, so wait 600ms between sends
+    // This prevents 429 errors when sending multiple notifications
+    await sleep(600);
+
     // Send via Resend
     const { data, error } = await resend.emails.send({
       from: `${env.FROM_NAME} <${env.FROM_EMAIL}>`,
@@ -85,10 +94,19 @@ async function sendEmailNotification(
 
     if (error) {
       console.error('❌ Resend error:', error);
+      // If rate limited, throw error to retry later
+      if (error.message?.includes('rate_limit') || error.message?.includes('429')) {
+        throw new Error('Rate limit exceeded - will retry');
+      }
     } else {
       console.log('✅ Email sent successfully to:', recipient.email, 'ID:', data?.id);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Failed to send email:', error);
+    // Log specific error details for debugging
+    if (error.statusCode === 429) {
+      console.error('⏱️ Rate limit hit - consider increasing delay or implementing queue');
+    }
+    throw error; // Re-throw to trigger queue retry mechanism
   }
 }
