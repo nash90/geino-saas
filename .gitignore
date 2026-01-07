@@ -108,3 +108,4 @@ temp/
 # Coding guidelines for AI assistants (not committed to repo)
 claude.md
 docs/coding-guide.md
+AGENTS.md
