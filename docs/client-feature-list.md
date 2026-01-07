@@ -223,9 +223,10 @@ View and Download Attachments (All users with access to task)
 **Task Progress Notifications:**
 - As a user, I receive a task progress notification (+ email) when:
   * I am assigned a task
-  * A task I'm assigned to changes status (Hold → Todo → In Progress → Done)
-  * A task I'm assigned to has its detail changed
-  * A task I created is updated by someone else
+  * A task status changes (if I'm a project member) - sent to ALL project members except the actor
+  * A task is updated (if I'm a project member) - sent to ALL project members except the actor
+    - Covers: title, description, deadline, priority, type, assignee changes
+    - Also includes status changes made via edit dialog (not drag-and-drop)
 
 **Task Progress Page UI Features:**
 - Dedicated page route: `/tasks-progress`
@@ -261,17 +262,21 @@ API Action → Emit Event to Cloudflare Queue with necessary db ids etc payload 
 - Password reset confirmation
 
 **Bell Notification Events:**
-- `user.mentioned` - User mentioned in a comment (@mention)
-- `project.member_added` - User added to a project
-- `organization.manager_assigned` - Assigned Organization Manager role
-- `project.manager_assigned` - Assigned Project Manager role
-- `project.member_assigned` - Assigned Geino User or Genba User role
+- `USER_MENTIONED` (code: 1) - User mentioned in a comment (@mention)
+- `PROJECT_MEMBER_ASSIGNED` (code: 2) - User added to a project (any role)
+- `ORGANIZATION_MANAGER_ASSIGNED` (code: 3) - User assigned as Organization Manager
+- `PROJECT_MANAGER_ASSIGNED` (code: 4) - User assigned as Project Manager
 
 **Task Progress Events:**
-- `task.assigned` - User assigned to a task
-- `task.status_changed` - Task status changed (on tasks user is assigned to)
-- `task.detail_changed` - Task details changed (title, description, deadline, assignee)
-- `task.updated` - Task user created is updated by someone else
+- `TASK_ASSIGNED` (code: 11) - User assigned to a task
+- `TASK_STATUS_CHANGED` (code: 12) - Task status changed via drag-and-drop (Hold → Todo → In Progress → Done)
+  * Sent to all project members (except the person who changed it)
+  * Includes old status and new status in notification
+- `TASK_UPDATED` (code: 13) - Task details updated (title, description, deadline, priority, type, assignee, or status via edit dialog)
+  * Sent to all project members (except the person who updated it)
+  * Includes list of changed fields in notification
+  * Replaces the previous `task.detail_changed` event
+  * Covers both status changes via edit and other field updates
 
 ### Backend Implementation Pattern:
 
