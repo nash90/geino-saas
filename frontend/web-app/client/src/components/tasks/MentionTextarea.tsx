@@ -69,13 +69,13 @@ const MentionList = forwardRef((props: any, ref) => {
   }));
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+    <div className="mention-dropdown bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto z-50">
       {props.items.length ? (
         props.items.map((item: MentionUser, index: number) => (
           <button
             key={item.id}
             type="button"
-            className={`w-full text-left px-3 py-2 text-sm border-b border-gray-100 last:border-b-0 ${
+            className={`w-full text-left px-3 py-1.5 text-sm border-b border-gray-100 last:border-b-0 ${
               index === selectedIndex ? "bg-indigo-50 text-indigo-900" : "hover:bg-gray-50"
             }`}
             onClick={() => selectItem(index)}
@@ -256,6 +256,48 @@ export function MentionTextarea({
         .tiptap-wrapper .ProseMirror[contenteditable="false"] {
           background-color: rgb(243, 244, 246);
           cursor: not-allowed;
+        }
+
+        /* Mention dropdown scrollbar styling */
+        .mention-dropdown {
+          scrollbar-width: thin;
+          scrollbar-color: rgb(203, 213, 225) transparent;
+        }
+
+        .mention-dropdown::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .mention-dropdown::-webkit-scrollbar-track {
+          background: transparent;
+          border-radius: 0.375rem;
+        }
+
+        .mention-dropdown::-webkit-scrollbar-thumb {
+          background-color: rgb(203, 213, 225);
+          border-radius: 0.375rem;
+        }
+
+        .mention-dropdown::-webkit-scrollbar-thumb:hover {
+          background-color: rgb(148, 163, 184);
+        }
+
+        /* Fade indicator at bottom when scrollable */
+        .mention-dropdown::after {
+          content: '';
+          position: sticky;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 20px;
+          background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.9));
+          pointer-events: none;
+          display: block;
+        }
+
+        /* Hide fade when scrolled to bottom */
+        .mention-dropdown::-webkit-scrollbar-thumb:active ~ ::after {
+          display: none;
         }
       `}</style>
 

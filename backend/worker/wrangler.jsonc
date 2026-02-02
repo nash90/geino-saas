@@ -17,7 +17,8 @@
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
 	"vars": {
-		"APP_URL": "http://localhost:3000"
+		"APP_URL": "http://localhost:3000",
+		"ENABLE_PROFILING": "true"
 	},
 	/**
 	 * R2 Buckets
@@ -32,14 +33,45 @@
 		}
 	],
 	/**
+	 * Cloudflare Queues for event-driven notifications
+	 * Using staging queue for development (same as R2 bucket pattern)
+	 */
+	"queues": {
+		"producers": [
+			{
+				"binding": "NOTIFICATIONS_QUEUE",
+				"queue": "geino-notifications-staging"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "geino-notifications-staging",
+				"max_batch_size": 10,
+				"max_batch_timeout": 30,
+				"max_retries": 3
+			}
+		]
+	},
+	/**
+	 * Cron triggers for scheduled tasks (partition management)
+	 * Runs on 1st day of each month at midnight UTC
+	 */
+	"triggers": {
+		"crons": ["0 0 1 * *"]
+	},
+	/**
 	 * Secrets (use wrangler secret put for sensitive values):
 	 * - SUPABASE_URL
 	 * - SUPABASE_SERVICE_ROLE_KEY
 	 * - DATABASE_URL (Supabase connection pooler URL in transaction mode)
+	 * - FROM_EMAIL (e.g., notifications@yourdomain.com)
+	 * - FROM_NAME (e.g., Geino SaaS)
 	 *
 	 * Example:
 	 * wrangler secret put SUPABASE_URL
 	 * wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 	 * wrangler secret put DATABASE_URL
+	 * wrangler secret put FROM_EMAIL
+	 * wrangler secret put FROM_NAME
 	 */
 }

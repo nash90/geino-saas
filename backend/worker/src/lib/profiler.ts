@@ -5,8 +5,10 @@ export class Profiler {
   private startTime: number;
   private checkpoints: Map<string, number>;
   private lastCheckpoint: number;
+  private enabled: boolean;
 
-  constructor() {
+  constructor(enabled: boolean = false) {
+    this.enabled = enabled;
     this.startTime = Date.now();
     this.lastCheckpoint = this.startTime;
     this.checkpoints = new Map();
@@ -14,8 +16,11 @@ export class Profiler {
 
   /**
    * Mark a checkpoint and return time since last checkpoint
+   * Does nothing if profiler is disabled
    */
   checkpoint(label: string): number {
+    if (!this.enabled) return 0;
+
     const now = Date.now();
     const duration = now - this.lastCheckpoint;
     this.checkpoints.set(label, duration);
@@ -32,9 +37,18 @@ export class Profiler {
 
   /**
    * Get formatted report of all checkpoints
+   * Logs to console if profiler is enabled, does nothing if disabled
    */
-  report(): string {
+  report(method?: string, path?: string): void {
+    if (!this.enabled) return;
+
     const lines: string[] = [];
+
+    // Add request info if provided
+    if (method && path) {
+      lines.push(`\n[${method} ${path}]`);
+    }
+
     lines.push(`\n=== Performance Profile (Total: ${this.elapsed()}ms) ===`);
 
     let index = 1;
@@ -45,7 +59,7 @@ export class Profiler {
     }
 
     lines.push('==========================================\n');
-    return lines.join('\n');
+    console.log(lines.join('\n'));
   }
 
   /**

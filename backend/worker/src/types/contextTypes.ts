@@ -17,6 +17,17 @@ export interface Env {
   R2_ACCESS_KEY_ID?: string;
   R2_SECRET_ACCESS_KEY?: string;
   R2_BUCKET_NAME?: string;
+
+  // Queue binding for notifications
+  NOTIFICATIONS_QUEUE: Queue;
+
+  // Email settings for Resend
+  RESEND_API_KEY: string;
+  FROM_EMAIL: string;
+  FROM_NAME: string;
+
+  // Performance profiling (optional, "true" to enable)
+  ENABLE_PROFILING?: string;
 }
 
 /**

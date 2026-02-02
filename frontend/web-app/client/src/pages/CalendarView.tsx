@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { tasksApi } from "@/api/tasks";
@@ -10,6 +9,7 @@ import { toast } from "sonner";
 import type { TaskWithDetails, ProjectWithMembers } from "@/types/entities";
 import { TaskStatus } from "@/types/entities";
 import { CalendarGrid, CalendarTaskList, TaskDetailDialog } from "@/components/tasks";
+import { ProjectMultiSelect } from "@/components/ProjectMultiSelect";
 
 interface CalendarTask {
   date: string;
@@ -32,7 +32,17 @@ export default function CalendarView() {
     return monday;
   });
 
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(() => {
+    const stored = localStorage.getItem('calendar_selected_projects');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [calendarTasks, setCalendarTasks] = useState<CalendarTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingTaskDetails, setLoadingTaskDetails] = useState(false);
@@ -42,12 +52,37 @@ export default function CalendarView() {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [currentProjectDetails, setCurrentProjectDetails] = useState<ProjectWithMembers | null>(null);
 
-  // Initialize with all projects user has access to
+  // Validate and initialize selected projects
   useEffect(() => {
-    if (projects.length > 0) {
-      setSelectedProjects(projects.map((p) => p.id));
+    if (projects.length === 0) return;
+
+    const projectIds = projects.map(p => p.id);
+
+    // Validate stored selections against available projects
+    let validSelections = selectedProjects.filter(id => projectIds.includes(id));
+
+    // If no valid selections, default to all projects (up to 5)
+    if (validSelections.length === 0) {
+      validSelections = projectIds.slice(0, 5);
     }
-  }, [projects]);
+
+    // Enforce max 5 limit
+    if (validSelections.length > 5) {
+      validSelections = validSelections.slice(0, 5);
+    }
+
+    // Update state if validation changed the selection
+    const currentSelection = JSON.stringify(selectedProjects.slice().sort());
+    const newSelection = JSON.stringify(validSelections.slice().sort());
+    if (currentSelection !== newSelection) {
+      setSelectedProjects(validSelections);
+    }
+  }, [projects, selectedProjects]);
+
+  // Persist selected projects to localStorage
+  useEffect(() => {
+    localStorage.setItem('calendar_selected_projects', JSON.stringify(selectedProjects));
+  }, [selectedProjects]);
 
   // Load calendar tasks when projects or date range changes
   useEffect(() => {
@@ -169,14 +204,6 @@ export default function CalendarView() {
 
   const weekViewDays = getCurrentWeekDays();
 
-  const handleProjectSelection = (value: string) => {
-    if (value === "all") {
-      setSelectedProjects(projects.map((p) => p.id));
-    } else {
-      setSelectedProjects([value]);
-    }
-  };
-
   const loadTaskDetails = async (taskId: string) => {
     setLoadingTaskDetails(true);
     try {
@@ -268,20 +295,16 @@ export default function CalendarView() {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">プロジェクト選択</span>
-              <Select onValueChange={handleProjectSelection} value={selectedProjects.length === projects.length ? "all" : selectedProjects[0]}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="選択してください" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">すべて</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {projects.length > 0 ? (
+                <ProjectMultiSelect
+                  projects={projects.map(p => ({ id: p.id, name: p.name }))}
+                  selectedProjectIds={selectedProjects}
+                  onSelectionChange={setSelectedProjects}
+                  placeholder="プロジェクトを選択 (最大5つ)"
+                />
+              ) : (
+                <div className="text-sm text-gray-500">プロジェクトを読み込み中...</div>
+              )}
             </div>
 
             <div className="flex gap-2">

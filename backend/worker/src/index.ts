@@ -7,6 +7,7 @@ import users from './routes/users';
 import organizations from './routes/organizations';
 import projects from './routes/projects';
 import tasks from './routes/tasks';
+import notifications from './routes/notifications';
 import type { Env } from './types';
 import type { DbClient } from './db/client';
 
@@ -39,13 +40,13 @@ app.use('*', cors({
 
 // Database middleware - attach db client and profiler to context
 app.use('*', async (c, next) => {
-  // Only profile specific routes
-  const shouldProfile = c.req.path.startsWith('/api/projects');
-  const profiler = new Profiler();
-  
+  // Check if profiling is enabled via environment variable
+  const profilingEnabled = c.env.ENABLE_PROFILING === 'true';
+  const profiler = new Profiler(profilingEnabled);
+
   const db = createDbClient(c.env.DATABASE_URL);
   profiler.checkpoint('DB client create');
-  
+
   c.set('db', db);
   c.set('profiler', profiler);
 
@@ -56,12 +57,9 @@ app.use('*', async (c, next) => {
     // Close database connection
     await db.$client?.end?.();
     profiler.checkpoint('DB close');
-    
-    // Only log profiling for targeted routes
-    if (shouldProfile) {
-      console.log(`\n[${c.req.method} ${c.req.path}]`);
-      console.log(profiler.report());
-    }
+
+    // Log profiling report (no-op if profiling disabled)
+    profiler.report(c.req.method, c.req.path);
   }
 });
 
@@ -76,5 +74,15 @@ app.route('/api/users', users);
 app.route('/api/organizations', organizations);
 app.route('/api/projects', projects);
 app.route('/api', tasks); // Tasks routes include /projects/:projectId/tasks, /tasks, /comments, /calendar, /uploads
+app.route('/api/notifications', notifications);
 
-export default app;
+// Import queue and scheduled handlers
+import { queue } from './queue';
+import { scheduled } from './scheduled';
+
+// Export all handlers as a single default export object
+export default {
+  fetch: app.fetch,
+  queue,
+  scheduled,
+};

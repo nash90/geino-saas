@@ -171,7 +171,7 @@ export function TaskDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] sm:max-w-[90vw] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle className="text-center text-xl">
             {isEditMode ? "タスク編集" : task.title}
           </DialogTitle>
@@ -208,11 +208,16 @@ export function TaskDetailDialog({
                 )}
                 {isEditMode && (
                   <>
-                    <Button variant="ghost" size="icon" onClick={handleSave} disabled={loading}>
-                      <Save className="h-4 w-4" />
+                    <Button
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Save className="h-4 w-4 mr-1" />
+                      保存
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
-                      <XIcon className="h-4 w-4" />
+                    <Button variant="outline" onClick={handleCancelEdit}>
+                      キャンセル
                     </Button>
                   </>
                 )}

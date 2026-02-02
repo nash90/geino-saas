@@ -192,6 +192,12 @@ export const TaskType: Record<string, CodeType> = {
   TYPE_B: { code: 2, label: 'タスク種別B', key: 'type_b' }
 };
 
+export const ProjectStatus: Record<string, CodeType> = {
+  ACTIVE: { code: 1, label: '進行中', key: 'active' },
+  COMPLETED: { code: 2, label: '完了', key: 'completed' },
+  ARCHIVED: { code: 3, label: 'アーカイブ', key: 'archived' }
+};
+
 // Role code constants
 export const SystemRole = {
   SYSTEM_ADMIN: { code: 1, label: 'System Admin', key: 'system_admin' },
@@ -207,4 +213,24 @@ export const ProjectRole = {
   PROJECT_MANAGER: { code: 1, label: 'Project Manager', key: 'project_manager' },
   GEINO_USER: { code: 2, label: 'Geino User', key: 'geino_user' },
   GENBA_USER: { code: 3, label: 'Genba User', key: 'genba_user' }
+} as const;
+
+// Notification Category Codes
+export const NotificationCategory = {
+  BELL: { code: 1, label: 'Bell Notification', key: 'bell' },
+  TASK_PROGRESS: { code: 2, label: 'Task Progress', key: 'task_progress' }
+} as const;
+
+// Notification Type Codes
+export const NotificationType = {
+  // Bell notifications (category_code = 1)
+  USER_MENTIONED: { code: 1, label: 'Mentioned in Comment', key: 'user_mentioned', categoryCode: 1 },
+  PROJECT_MEMBER_ASSIGNED: { code: 2, label: 'Project Member Assigned', key: 'project_member_assigned', categoryCode: 1 },
+  ORGANIZATION_MANAGER_ASSIGNED: { code: 3, label: 'Org Manager Assigned', key: 'organization_manager_assigned', categoryCode: 1 },
+  PROJECT_MANAGER_ASSIGNED: { code: 4, label: 'Project Manager Assigned', key: 'project_manager_assigned', categoryCode: 1 },
+
+  // Task progress notifications (category_code = 2)
+  TASK_ASSIGNED: { code: 11, label: 'Task Assigned', key: 'task_assigned', categoryCode: 2 },
+  TASK_STATUS_CHANGED: { code: 12, label: 'Task Status Changed', key: 'task_status_changed', categoryCode: 2 },
+  TASK_UPDATED: { code: 13, label: 'Task Details Updated', key: 'task_updated', categoryCode: 2 }
 } as const;

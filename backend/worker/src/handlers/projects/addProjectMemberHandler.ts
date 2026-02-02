@@ -22,7 +22,7 @@ export async function addProjectMemberHandler(c: AuthContext) {
   const { userId, projectRoleCode } = body;
 
   // Call service layer
-  const result = await projectCommandService.addMember(projectId, userId, projectRoleCode);
+  const result = await projectCommandService.addMember(projectId, userId, projectRoleCode, user.id);
 
   if (!result.success) {
     const statusCode = result.code === 'NOT_FOUND' ? 404 :

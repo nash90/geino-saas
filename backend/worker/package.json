@@ -24,7 +24,7 @@
 		"drizzle-kit": "^0.31.7",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
-		"wrangler": "^4.51.0"
+		"wrangler": "^4.56.0"
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.948.0",
@@ -32,6 +32,7 @@
 		"@supabase/supabase-js": "^2.86.0",
 		"drizzle-orm": "^0.44.7",
 		"hono": "^4.10.7",
-		"postgres": "^3.4.7"
+		"postgres": "^3.4.7",
+		"resend": "^6.6.0"
 	}
 }

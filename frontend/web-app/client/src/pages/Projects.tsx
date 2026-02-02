@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,12 +13,14 @@ import { projectsApi } from "@/api/projects";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import type { ProjectWithMembers } from "@/types/entities";
+import { ProjectStatus } from "@/types/entities";
 import { toast } from "sonner";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { AddMemberDialog } from "@/components/projects/AddMemberDialog";
+import { OrganizationMultiSelect } from "@/components/OrganizationMultiSelect";
 
 export default function Projects() {
   const { organizations } = useAuth();
@@ -32,12 +34,66 @@ export default function Projects() {
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithMembers | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedOrganization, setSelectedOrganization] = useState<string>("all");
+
+  // Organization multi-select with localStorage
+  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>(() => {
+    const stored = localStorage.getItem('projects_selected_organizations');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  // Status filter
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   // Load projects on mount
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Validate and initialize selected organizations
+  useEffect(() => {
+    if (organizations.length === 0) return;
+
+    const orgIds = organizations.map(o => o.id);
+    let validSelections = selectedOrganizations.filter(id => orgIds.includes(id));
+
+    // If no valid selections, default to all organizations (up to 5)
+    if (validSelections.length === 0) {
+      validSelections = orgIds.slice(0, 5);
+    }
+
+    // Enforce max 5 limit
+    if (validSelections.length > 5) {
+      validSelections = validSelections.slice(0, 5);
+    }
+
+    const currentSelection = JSON.stringify(selectedOrganizations.slice().sort());
+    const newSelection = JSON.stringify(validSelections.slice().sort());
+
+    if (currentSelection !== newSelection) {
+      setSelectedOrganizations(validSelections);
+    }
+  }, [organizations, selectedOrganizations]);
+
+  // Persist selected organizations to localStorage
+  useEffect(() => {
+    localStorage.setItem('projects_selected_organizations', JSON.stringify(selectedOrganizations));
+  }, [selectedOrganizations]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedOrganizations, selectedStatus]);
 
   const loadProjects = async () => {
     try {
@@ -181,49 +237,84 @@ export default function Projects() {
   };
 
   const getStatusLabel = (statusCode: number) => {
-    switch (statusCode) {
-      case 1: return '進行中';
-      case 2: return '完了';
-      case 3: return 'アーカイブ';
-      default: return '不明';
-    }
+    const status = Object.values(ProjectStatus).find(s => s.code === statusCode);
+    return status?.label || '不明';
   };
 
   // Check if user can create projects in any organization
   const canCreateProject = organizations.some(org => isOrganizationManagerOrAbove(org.id));
 
-  // Filter projects by selected organization
-  const filteredProjects = selectedOrganization === "all"
-    ? projects
-    : projects.filter(p => p.organizationId === selectedOrganization);
+  // Filter projects by selected organizations and status
+  let filteredProjects = projects;
+
+  // Filter by organization
+  if (selectedOrganizations.length > 0) {
+    filteredProjects = filteredProjects.filter(p =>
+      selectedOrganizations.includes(p.organizationId)
+    );
+  }
+
+  // Filter by status
+  if (selectedStatus !== "all") {
+    filteredProjects = filteredProjects.filter(p =>
+      p.statusCode === parseInt(selectedStatus)
+    );
+  }
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  };
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">プロジェクト一覧</h1>
-          {organizations.length > 1 && (
-            <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
-              <SelectTrigger className="w-[250px]">
-                <SelectValue placeholder="組織でフィルター" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">すべての組織</SelectItem>
-                {organizations.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>
-                    {org.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {canCreateProject && (
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              新規プロジェクト作成
+            </Button>
           )}
         </div>
-        {canCreateProject && (
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            新規プロジェクト作成
-          </Button>
-        )}
+
+        <div className="flex items-center gap-4">
+          {organizations.length > 0 && (
+            <OrganizationMultiSelect
+              organizations={organizations.map(o => ({ id: o.id, name: o.name }))}
+              selectedOrganizationIds={selectedOrganizations}
+              onSelectionChange={setSelectedOrganizations}
+              maxSelections={5}
+              placeholder="組織を選択 (最大5つ)"
+            />
+          )}
+
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="ステータスでフィルター" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">すべてのステータス</SelectItem>
+              <SelectItem value={ProjectStatus.ACTIVE.code.toString()}>{ProjectStatus.ACTIVE.label}</SelectItem>
+              <SelectItem value={ProjectStatus.COMPLETED.code.toString()}>{ProjectStatus.COMPLETED.label}</SelectItem>
+              <SelectItem value={ProjectStatus.ARCHIVED.code.toString()}>{ProjectStatus.ARCHIVED.label}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="ml-auto text-sm text-gray-500">
+            {filteredProjects.length}件のプロジェクト
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -234,19 +325,76 @@ export default function Projects() {
         <div className="text-center py-12 text-gray-500">
           {projects.length === 0
             ? "プロジェクトがありません"
-            : "選択した組織にプロジェクトがありません"}
+            : "選択した条件に一致するプロジェクトがありません"}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onClick={() => handleProjectClick(project)}
-              calculateProgress={calculateProgress}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onClick={() => handleProjectClick(project)}
+                calculateProgress={calculateProgress}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                前へ
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage =
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1;
+
+                  if (!showPage) {
+                    // Show ellipsis
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="px-2 text-gray-400">...</span>;
+                    }
+                    return null;
+                  }
+
+                  return (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-10"
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                次へ
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Project Dialog */}
