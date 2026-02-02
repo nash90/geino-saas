@@ -69,21 +69,27 @@ const MentionList = forwardRef((props: any, ref) => {
   }));
 
   return (
-    <div className="mention-dropdown bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto z-50">
+    <div className="mention-dropdown bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto" style={{ position: "relative", zIndex: 9999, pointerEvents: "auto" }}>
       {props.items.length ? (
         props.items.map((item: MentionUser, index: number) => (
           <button
             key={item.id}
             type="button"
-            className={`w-full text-left px-3 py-1.5 text-sm border-b border-gray-100 last:border-b-0 ${
-              index === selectedIndex ? "bg-indigo-50 text-indigo-900" : "hover:bg-gray-50"
+            className={`w-full text-left px-3 py-1.5 text-sm border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
+              index === selectedIndex ? "bg-indigo-100 text-indigo-900 font-medium" : "hover:bg-gray-100"
             }`}
+            onMouseEnter={() => setSelectedIndex(index)}
             onClick={() => selectItem(index)}
+            onMouseDown={(e) => {
+              // Prevent blur on textarea when clicking
+              e.preventDefault();
+              selectItem(index);
+            }}
           >
             <div className="font-medium">
               {item.firstname} {item.lastname}
             </div>
-            <div className="text-xs text-gray-500">{item.email}</div>
+            <div className={`text-xs ${index === selectedIndex ? "text-indigo-700" : "text-gray-500"}`}>{item.email}</div>
           </button>
         ))
       ) : (
@@ -156,6 +162,17 @@ export function MentionTextarea({
                   interactive: true,
                   trigger: "manual",
                   placement: "bottom-start",
+                  zIndex: 9999,
+                  popperOptions: {
+                    modifiers: [
+                      {
+                        name: "preventOverflow",
+                        options: {
+                          boundary: "viewport",
+                        },
+                      },
+                    ],
+                  },
                 });
               },
 
