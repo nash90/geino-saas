@@ -127,7 +127,7 @@ export function TaskCreateDialog({
               <SelectContent>
                 {projectMembers.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
-                    {member.firstname} {member.lastname}
+                    {member.lastname} {member.firstname}
                   </SelectItem>
                 ))}
               </SelectContent>

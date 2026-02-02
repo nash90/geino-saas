@@ -51,7 +51,7 @@ export function ProjectCard({ project, onClick, calculateProgress }: ProjectCard
               className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-semibold border-2 border-white"
               title={`${member.user.lastname} ${member.user.firstname}`}
             >
-              {member.user.firstname.charAt(0)}{member.user.lastname.charAt(0)}
+              {member.user.lastname.charAt(0)}{member.user.firstname.charAt(0)}
             </div>
           ))}
           {project.members.length > 3 && (

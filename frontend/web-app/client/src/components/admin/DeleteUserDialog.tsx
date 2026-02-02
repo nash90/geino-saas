@@ -41,7 +41,7 @@ export function DeleteUserDialog({
               <div className="space-y-2">
                 <p className="font-medium">削除されるユーザー:</p>
                 <p>{user?.email}</p>
-                <p>{user?.firstname} {user?.lastname}</p>
+                <p>{user?.lastname} {user?.firstname}</p>
               </div>
             </AlertDescription>
           </Alert>

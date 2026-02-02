@@ -159,7 +159,7 @@ export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrg
                         htmlFor={`manager-${user.id}`}
                         className="text-sm cursor-pointer flex-1"
                       >
-                        {user.firstname} {user.lastname} ({user.email})
+                        {user.lastname} {user.firstname} ({user.email})
                       </label>
                     </div>
                   ))}

@@ -93,7 +93,7 @@ export function CommentList({
   };
 
   const getInitials = (firstname: string, lastname: string) => {
-    return `${firstname.charAt(0)}${lastname.charAt(0)}`.toUpperCase();
+    return `${lastname.charAt(0)}${firstname.charAt(0)}`.toUpperCase();
   };
 
   return (

@@ -81,7 +81,7 @@ export function AddMemberSection({ members, onAddMember, actionLoading }: AddMem
         <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div>
             <p className="font-medium text-sm">
-              {selectedUser.firstname} {selectedUser.lastname}
+              {selectedUser.lastname} {selectedUser.firstname}
             </p>
             <p className="text-sm text-gray-600">{selectedUser.email}</p>
           </div>
@@ -141,7 +141,7 @@ export function AddMemberSection({ members, onAddMember, actionLoading }: AddMem
                   className="w-full p-3 text-left hover:bg-gray-50 transition-colors"
                 >
                   <p className="font-medium text-sm">
-                    {user.firstname} {user.lastname}
+                    {user.lastname} {user.firstname}
                   </p>
                   <p className="text-sm text-gray-600">{user.email}</p>
                 </button>

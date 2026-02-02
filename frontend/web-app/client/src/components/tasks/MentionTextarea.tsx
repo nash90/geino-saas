@@ -29,7 +29,7 @@ const MentionList = forwardRef((props: any, ref) => {
   const selectItem = (index: number) => {
     const item = props.items[index];
     if (item) {
-      props.command({ id: item.id, label: `${item.firstname} ${item.lastname}` });
+      props.command({ id: item.id, label: `${item.lastname} ${item.firstname}` });
     }
   };
 
@@ -87,7 +87,7 @@ const MentionList = forwardRef((props: any, ref) => {
             }}
           >
             <div className="font-medium">
-              {item.firstname} {item.lastname}
+              {item.lastname} {item.firstname}
             </div>
             <div className={`text-xs ${index === selectedIndex ? "text-indigo-700" : "text-gray-500"}`}>{item.email}</div>
           </button>

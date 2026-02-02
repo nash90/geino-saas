@@ -37,8 +37,8 @@ export default function Register() {
       return;
     }
 
-    if (!formData.firstname || !formData.lastname) {
-      setError('名前と苗字は必須です');
+    if (!formData.lastname || !formData.firstname) {
+      setError('苗字と名前は必須です');
       return;
     }
 
@@ -97,19 +97,6 @@ export default function Register() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstname">名前</Label>
-                <Input
-                  id="firstname"
-                  name="firstname"
-                  type="text"
-                  placeholder="太郎"
-                  value={formData.firstname}
-                  onChange={handleChange}
-                  required
-                  disabled={loading || success}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="lastname">苗字</Label>
                 <Input
                   id="lastname"
@@ -117,6 +104,19 @@ export default function Register() {
                   type="text"
                   placeholder="山田"
                   value={formData.lastname}
+                  onChange={handleChange}
+                  required
+                  disabled={loading || success}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="firstname">名前</Label>
+                <Input
+                  id="firstname"
+                  name="firstname"
+                  type="text"
+                  placeholder="太郎"
+                  value={formData.firstname}
                   onChange={handleChange}
                   required
                   disabled={loading || success}

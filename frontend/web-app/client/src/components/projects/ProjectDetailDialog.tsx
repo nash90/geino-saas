@@ -94,7 +94,7 @@ export function ProjectDetailDialog({
                 {project.members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-semibold">
-                      {member.user.firstname.charAt(0)}{member.user.lastname.charAt(0)}
+                      {member.user.lastname.charAt(0)}{member.user.firstname.charAt(0)}
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium">

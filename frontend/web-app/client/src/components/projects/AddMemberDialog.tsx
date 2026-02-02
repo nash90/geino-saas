@@ -145,7 +145,7 @@ export function AddMemberDialog({ open, onClose, project, onSuccess }: AddMember
                   onClick={() => setSelectedUser(user)}
                 >
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white font-semibold">
-                    {user.firstname.charAt(0)}{user.lastname.charAt(0)}
+                    {user.lastname.charAt(0)}{user.firstname.charAt(0)}
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">

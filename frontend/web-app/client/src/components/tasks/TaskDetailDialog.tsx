@@ -159,7 +159,7 @@ export function TaskDetailDialog({
 
   const getAssigneeInitials = (firstname?: string, lastname?: string) => {
     if (!firstname || !lastname) return "??";
-    return `${firstname[0]}${lastname[0]}`.toUpperCase();
+    return `${lastname[0]}${firstname[0]}`.toUpperCase();
   };
 
   const getTaskTypeLabel = (typeCode?: number) => {
@@ -268,7 +268,7 @@ export function TaskDetailDialog({
                       <SelectItem value="unassigned">未割り当て</SelectItem>
                       {projectMembers.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          {member.firstname} {member.lastname}
+                          {member.lastname} {member.firstname}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -291,7 +291,7 @@ export function TaskDetailDialog({
                       {getAssigneeInitials(task.assignee.firstname, task.assignee.lastname)}
                     </div>
                     <span className="text-sm">
-                      {task.assignee.firstname} {task.assignee.lastname}
+                      {task.assignee.lastname} {task.assignee.firstname}
                     </span>
                   </>
                 )}
