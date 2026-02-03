@@ -150,7 +150,7 @@ export function TaskCreateDialog({
             <Label>期限設定</Label>
             <div className="flex gap-2">
               <Input
-                type="date"
+                type="datetime-local"
                 placeholder="期限入力"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}

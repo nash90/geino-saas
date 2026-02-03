@@ -23,6 +23,7 @@ import type { TaskWithComments, TaskCommentWithUser } from "@/types/entities";
 import { TaskStatus, TaskType } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
 import { CommentList } from "./CommentList";
+import { toLocalDateTimeString, formatDateTime } from "@/lib/date-utils";
 import { CommentInput } from "./CommentInput";
 import { AttachmentUpload } from "./AttachmentUpload";
 import { FilePreview } from "./FilePreview";
@@ -65,7 +66,7 @@ export function TaskDetailDialog({
       setEditedDescription(task.description || "");
       setEditedStatusCode(task.statusCode);
       setEditedAssignedTo(task.assignedTo || "");
-      setEditedDeadline(task.deadline ? task.deadline.split('T')[0] : "");
+      setEditedDeadline(task.deadline ? toLocalDateTimeString(task.deadline) : "");
       setIsEditMode(false);
       fetchComments();
     }
@@ -136,7 +137,7 @@ export function TaskDetailDialog({
       setEditedDescription(task.description || "");
       setEditedStatusCode(task.statusCode);
       setEditedAssignedTo(task.assignedTo || "");
-      setEditedDeadline(task.deadline ? task.deadline.split('T')[0] : "");
+      setEditedDeadline(task.deadline ? toLocalDateTimeString(task.deadline) : "");
     }
     setIsEditMode(false);
   };
@@ -277,7 +278,7 @@ export function TaskDetailDialog({
                 <div>
                   <label className="text-sm font-medium mb-1 block">期限</label>
                   <Input
-                    type="date"
+                    type="datetime-local"
                     value={editedDeadline}
                     onChange={(e) => setEditedDeadline(e.target.value)}
                   />
@@ -297,7 +298,7 @@ export function TaskDetailDialog({
                 )}
                 {task.deadline && (
                   <span className="ml-auto text-sm text-gray-500">
-                    期限 {new Date(task.deadline).toLocaleDateString("ja-JP")}
+                    期限 {formatDateTime(task.deadline)}
                   </span>
                 )}
               </div>

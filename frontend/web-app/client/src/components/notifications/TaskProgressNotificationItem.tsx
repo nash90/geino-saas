@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { TaskStatus, NotificationType } from '@/types/entities';
 import type { Notification } from '@/api/notifications';
+import { formatDateTime } from '@/lib/date-utils';
 
 interface TaskProgressNotificationItemProps {
   notification: Notification;
@@ -53,7 +54,7 @@ export function TaskProgressNotificationItem({
           )}
 
           <p className="text-xs text-gray-400">
-            {new Date(notification.createdAt).toLocaleString('ja-JP')}
+            {formatDateTime(notification.createdAt)}
           </p>
         </div>
 
