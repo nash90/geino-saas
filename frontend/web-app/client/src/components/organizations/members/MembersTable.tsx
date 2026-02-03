@@ -50,7 +50,7 @@ export function MembersTable({ members, loading, actionLoading, onRemoveMember }
           {members.map((member) => (
             <TableRow key={member.id}>
               <TableCell>
-                {member.user.firstname} {member.user.lastname}
+                {member.user.lastname} {member.user.firstname}
               </TableCell>
               <TableCell className="text-gray-600">
                 {member.user.email}

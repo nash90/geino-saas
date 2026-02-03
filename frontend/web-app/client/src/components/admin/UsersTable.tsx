@@ -82,7 +82,7 @@ export function UsersTable({
           users.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.email}</TableCell>
-              <TableCell>{user.firstname} {user.lastname}</TableCell>
+              <TableCell>{user.lastname} {user.firstname}</TableCell>
               <TableCell>{getRoleBadge(user.systemRoleCode)}</TableCell>
               <TableCell className="text-gray-600">
                 {new Date(user.createdAt).toLocaleDateString('ja-JP')}

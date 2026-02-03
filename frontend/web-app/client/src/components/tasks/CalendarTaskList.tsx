@@ -49,7 +49,7 @@ export function CalendarTaskList({ selectedDate, tasks, onTaskClick }: CalendarT
               )}
               {task.assignee && (
                 <p className="text-xs text-gray-500">
-                  担当: {task.assignee.firstname} {task.assignee.lastname}
+                  担当: {task.assignee.lastname} {task.assignee.firstname}
                 </p>
               )}
               {task.deadline && (

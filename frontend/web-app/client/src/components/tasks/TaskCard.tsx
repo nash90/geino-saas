@@ -22,7 +22,7 @@ export function TaskCard({ task, onClick, isDraggable = true }: TaskCardProps) {
 
   const getAssigneeInitials = (firstname?: string, lastname?: string) => {
     if (!firstname || !lastname) return "??";
-    return `${firstname[0]}${lastname[0]}`.toUpperCase();
+    return `${lastname[0]}${firstname[0]}`.toUpperCase();
   };
 
   const getPriorityColor = (priorityCode?: number) => {
@@ -72,7 +72,7 @@ export function TaskCard({ task, onClick, isDraggable = true }: TaskCardProps) {
           {task.assignee && (
             <div
               className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-medium"
-              title={`${task.assignee.firstname} ${task.assignee.lastname}`}
+              title={`${task.assignee.lastname} ${task.assignee.firstname}`}
             >
               {getAssigneeInitials(task.assignee.firstname, task.assignee.lastname)}
             </div>
