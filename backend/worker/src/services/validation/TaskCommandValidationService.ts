@@ -173,14 +173,20 @@ export class TaskCommandValidationService {
    * Validate deadline
    * Uses DateValidationService for comprehensive validation:
    * - Valid ISO 8601 format
-   * - Future date
+   * - Future date (if allowPast is false)
    * - Within reasonable range (max 10 years in future)
+   * 
+   * @param deadline - Deadline to validate
+   * @param allowPast - Allow past dates (default: false). Set to true for task updates.
    */
-  validateDeadlineDate(deadline: Date | null | undefined): ValidationError | null {
+  validateDeadlineDate(
+    deadline: Date | null | undefined,
+    allowPast: boolean = false
+  ): ValidationError | null {
     if (!deadline) return null;
 
     // Use DateValidationService for comprehensive validation
-    return this.dateValidator.validateDeadline(deadline, 10);
+    return this.dateValidator.validateDeadline(deadline, 10, allowPast);
   }
 
   /**
@@ -276,8 +282,8 @@ export class TaskCommandValidationService {
     const priorityError = this.validatePriorityCode(data.priorityCode);
     if (priorityError) return priorityError;
 
-    // Validate deadline if provided
-    const deadlineError = this.validateDeadlineDate(data.deadline);
+    // Validate deadline if provided (strict: must be future date for new tasks)
+    const deadlineError = this.validateDeadlineDate(data.deadline, false);
     if (deadlineError) return deadlineError;
 
     // Validate assignee if provided
@@ -327,8 +333,8 @@ export class TaskCommandValidationService {
     const priorityError = this.validatePriorityCode(data.priorityCode);
     if (priorityError) return priorityError;
 
-    // Validate deadline if provided
-    const deadlineError = this.validateDeadlineDate(data.deadline);
+    // Validate deadline if provided (lenient: allow past dates for task updates)
+    const deadlineError = this.validateDeadlineDate(data.deadline, true);
     if (deadlineError) return deadlineError;
 
     // Validate assignee if provided
