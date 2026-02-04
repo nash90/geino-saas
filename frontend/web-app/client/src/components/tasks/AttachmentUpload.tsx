@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { uploadsApi } from "@/api/uploads";
 import { getFileValidationError, formatFileSize } from "@/lib/fileUtils";
 import type { Attachment } from "@/types/entities";
+import { MESSAGES } from "@/constants/messages";
 
 interface AttachmentUploadProps {
   taskId?: string;
@@ -81,11 +82,11 @@ export function AttachmentUpload({
       });
 
       setProgress(100);
-      toast.success("ファイルをアップロードしました");
+      toast.success(MESSAGES.FILE.FILE_UPLOADED_SUCCESS);
       onUploadComplete(attachment);
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error(error.response?.data?.error || "アップロードに失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_UPLOAD_FAILED);
     } finally {
       setUploading(false);
       setProgress(0);

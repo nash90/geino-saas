@@ -7,6 +7,7 @@ import { MentionTextarea } from "./MentionTextarea";
 import { AttachmentUpload } from "./AttachmentUpload";
 import { AttachmentList } from "./AttachmentList";
 import type { Attachment } from "@/types/entities";
+import { MESSAGES } from "@/constants/messages";
 
 interface CommentInputProps {
   taskId: string;
@@ -30,7 +31,7 @@ export function CommentInput({
 
   const handleSubmit = async () => {
     if (!content.trim() && pendingAttachments.length === 0) {
-      toast.error("コメントまたはファイルを入力してください");
+      toast.error(MESSAGES.COMMENT.COMMENT_OR_FILE_REQUIRED);
       return;
     }
 
@@ -46,10 +47,10 @@ export function CommentInput({
       setContent("");
       setPendingAttachments([]);
 
-      toast.success("コメントを追加しました");
+      toast.success(MESSAGES.COMMENT.COMMENT_ADDED_SUCCESS);
       onCommentAdded();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "コメントの追加に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.COMMENT.COMMENT_ADD_FAILED);
     } finally {
       setSubmitting(false);
     }

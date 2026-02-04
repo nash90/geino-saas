@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { uploadsApi } from "@/api/uploads";
 import { formatFileSize, getFileIconType, isImageFile } from "@/lib/fileUtils";
 import type { Attachment } from "@/types/entities";
+import { MESSAGES } from "@/constants/messages";
 
 interface AttachmentListProps {
   attachments: Attachment[];
@@ -36,9 +37,9 @@ export function AttachmentList({ attachments, onDelete, canDelete }: AttachmentL
     try {
       setDownloading(attachment.id);
       await uploadsApi.downloadAttachment(attachment.id, attachment.fileName);
-      toast.success("ファイルをダウンロードしました");
+      toast.success(MESSAGES.FILE.FILE_DOWNLOADED_SUCCESS);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "ダウンロードに失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_DOWNLOAD_FAILED);
     } finally {
       setDownloading(null);
     }
@@ -55,9 +56,9 @@ export function AttachmentList({ attachments, onDelete, canDelete }: AttachmentL
     try {
       setDeleting(attachmentToDelete);
       await onDelete(attachmentToDelete);
-      toast.success("ファイルを削除しました");
+      toast.success(MESSAGES.FILE.FILE_DELETED_SUCCESS);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "削除に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_DELETE_FAILED);
     } finally {
       setDeleting(null);
       setDeleteDialogOpen(false);
