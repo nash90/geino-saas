@@ -93,7 +93,7 @@ export interface CreateTaskRequest {
   typeCode?: number;
   priorityCode?: number;
   assignedTo?: string;
-  deadline?: string; // ISO date string
+  deadline?: string | null; // ISO date string or null to clear
 }
 
 export interface UpdateTaskRequest {
@@ -103,7 +103,7 @@ export interface UpdateTaskRequest {
   typeCode?: number;
   priorityCode?: number;
   assignedTo?: string;
-  deadline?: string; // ISO date string
+  deadline?: string | null; // ISO date string or null to clear
 }
 
 export interface UpdateTaskStatusRequest {

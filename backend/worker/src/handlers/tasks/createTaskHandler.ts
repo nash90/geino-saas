@@ -1,11 +1,13 @@
 import { TaskCommandService } from '../../services/tasks/TaskCommandService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import { DateValidationService } from '../../services/validation/DateValidationService';
 import type { AuthContext } from '../../types';
 
 export async function createTaskHandler(c: AuthContext) {
   const db = c.get('db');
   const user = c.get('user');
   const taskCommandService = new TaskCommandService(db, c.env);
+  const dateValidator = new DateValidationService();
 
   // Get project ID from path parameter
   const projectId = c.req.param('projectId');
@@ -13,6 +15,14 @@ export async function createTaskHandler(c: AuthContext) {
   // Parse request body
   const body = await c.req.json();
   const { title, description, statusCode, typeCode, priorityCode, assignedTo, deadline } = body;
+
+  // Validate deadline ISO string format if provided
+  if (deadline) {
+    const isoValidation = dateValidator.validateISODateString(deadline, 'deadline');
+    if (isoValidation) {
+      return c.json({ error: isoValidation.error }, 400);
+    }
+  }
 
   // Check if user has permission to create tasks
   const hasAccess = await AuthorizationService.canCreateTask(db, user, projectId, statusCode);
@@ -41,7 +51,7 @@ export async function createTaskHandler(c: AuthContext) {
       typeCode,
       priorityCode,
       assignedTo,
-      deadline: deadline ? new Date(deadline) : undefined,
+      deadline: deadline ? new Date(deadline) : null,
       createdBy: user.id,
     },
     userRoleCode

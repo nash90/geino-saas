@@ -10,6 +10,7 @@ import { eq, and } from 'drizzle-orm';
 import type { DbClient } from '../../db/client';
 import type { Env } from '../../types';
 import { TaskStatus, ProjectRole } from '../../types/codeTypes';
+import { DateValidationService } from './DateValidationService';
 
 // Simple error response for validation
 interface ValidationError {
@@ -25,7 +26,7 @@ export interface CreateTaskData {
   typeCode?: number;
   priorityCode?: number;
   assignedTo?: string;
-  deadline?: Date;
+  deadline?: Date | null;
   createdBy: string;
 }
 
@@ -36,14 +37,18 @@ export interface UpdateTaskData {
   typeCode?: number;
   priorityCode?: number;
   assignedTo?: string;
-  deadline?: Date;
+  deadline?: Date | null;
 }
 
 export class TaskCommandValidationService {
+  private dateValidator: DateValidationService;
+
   constructor(
     private db: DbClient,
     private env: Env
-  ) {}
+  ) {
+    this.dateValidator = new DateValidationService();
+  }
 
   /**
    * Helper: Validate UUID format
@@ -79,6 +84,7 @@ export class TaskCommandValidationService {
 
   /**
    * Helper: Validate deadline is a future date
+   * @deprecated Use DateValidationService.validateDeadline() instead
    */
   private validateDeadline(deadline: Date): boolean {
     const now = new Date();
@@ -165,14 +171,16 @@ export class TaskCommandValidationService {
 
   /**
    * Validate deadline
+   * Uses DateValidationService for comprehensive validation:
+   * - Valid ISO 8601 format
+   * - Future date
+   * - Within reasonable range (max 10 years in future)
    */
-  validateDeadlineDate(deadline: Date | undefined): ValidationError | null {
+  validateDeadlineDate(deadline: Date | null | undefined): ValidationError | null {
     if (!deadline) return null;
 
-    if (!this.validateDeadline(deadline)) {
-      return this.error('Deadline must be a future date', 'INVALID_INPUT');
-    }
-    return null;
+    // Use DateValidationService for comprehensive validation
+    return this.dateValidator.validateDeadline(deadline, 10);
   }
 
   /**
