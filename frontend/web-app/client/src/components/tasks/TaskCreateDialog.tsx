@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { tasksApi } from "@/api/tasks";
 import type { CreateTaskRequest } from "@/types/api";
 import { TaskStatus } from "@/types/entities";
+import { validateDateTimeInput, validateDeadlineValue } from "@/lib/validation/dateValidation";
 
 interface TaskCreateDialogProps {
   open: boolean;
@@ -46,11 +47,30 @@ export function TaskCreateDialog({
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [deadline, setDeadline] = useState("");
   const [loading, setLoading] = useState(false);
+  const deadlineInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error("タスク名を入力してください");
       return;
+    }
+
+    // Validate deadline using input element if available
+    if (deadline && deadlineInputRef.current) {
+      const inputValidation = validateDateTimeInput(deadlineInputRef.current, false);
+      if (!inputValidation.valid && !inputValidation.isEmpty) {
+        toast.error(inputValidation.error || "無効な期限です");
+        return;
+      }
+    }
+
+    // Validate deadline value with business logic
+    if (deadline) {
+      const deadlineValidation = validateDeadlineValue(deadline, false);
+      if (!deadlineValidation.valid) {
+        toast.error(deadlineValidation.error || "無効な期限です");
+        return;
+      }
     }
 
     setLoading(true);
@@ -61,7 +81,7 @@ export function TaskCreateDialog({
         statusCode: statusCode || TaskStatus.TODO.code,
         typeCode: parseInt(taskType),
         assignedTo: assignedTo || undefined,
-        deadline: deadline ? new Date(deadline).toISOString() : undefined,
+        deadline: deadline ? new Date(deadline).toISOString() : null,
       };
 
       await tasksApi.create(projectId, data);
@@ -150,7 +170,8 @@ export function TaskCreateDialog({
             <Label>期限設定</Label>
             <div className="flex gap-2">
               <Input
-                type="date"
+                ref={deadlineInputRef}
+                type="datetime-local"
                 placeholder="期限入力"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}

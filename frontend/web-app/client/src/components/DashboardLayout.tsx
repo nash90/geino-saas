@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { toast } from 'sonner';
+import { formatDateTime } from '@/lib/date-utils';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -229,12 +230,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="text-sm font-medium flex-1">{notification.title}</p>
                       <p className="text-xs text-gray-400 whitespace-nowrap">
-                        {new Date(notification.createdAt).toLocaleString('ja-JP', {
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {formatDateTime(notification.createdAt)}
                       </p>
                     </div>
 

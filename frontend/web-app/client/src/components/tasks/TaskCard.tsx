@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { TaskWithDetails } from "@/types/entities";
+import { formatDateTime } from "@/lib/date-utils";
 
 interface TaskCardProps {
   task: TaskWithDetails;
@@ -80,7 +81,7 @@ export function TaskCard({ task, onClick, isDraggable = true }: TaskCardProps) {
         </div>
         {task.deadline && (
           <span className="text-xs text-gray-500">
-            期限 {new Date(task.deadline).toLocaleDateString("ja-JP")}
+            期限 {formatDateTime(task.deadline)}
           </span>
         )}
       </div>

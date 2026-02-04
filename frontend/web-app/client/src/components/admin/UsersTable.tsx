@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
 import { Shield, ShieldOff, Trash2, User as UserIcon } from 'lucide-react';
 
@@ -85,7 +86,7 @@ export function UsersTable({
               <TableCell>{user.lastname} {user.firstname}</TableCell>
               <TableCell>{getRoleBadge(user.systemRoleCode)}</TableCell>
               <TableCell className="text-gray-600">
-                {new Date(user.createdAt).toLocaleDateString('ja-JP')}
+                {formatDate(user.createdAt)}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">

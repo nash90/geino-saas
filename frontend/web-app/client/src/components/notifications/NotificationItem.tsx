@@ -1,4 +1,5 @@
 import type { Notification } from '@/api/notifications';
+import { formatDateTime } from '@/lib/date-utils';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -20,7 +21,7 @@ export function NotificationItem({ notification, onMarkAsRead }: NotificationIte
           <p className="font-medium text-sm">{notification.title}</p>
           <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
           <p className="text-xs text-gray-400 mt-2">
-            {new Date(notification.createdAt).toLocaleString('ja-JP')}
+            {formatDateTime(notification.createdAt)}
           </p>
         </div>
         {!notification.readAt && (

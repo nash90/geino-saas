@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
+import { formatDateTime } from '@/lib/date-utils';
 
 export default function TasksProgress() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -111,12 +112,7 @@ export default function TasksProgress() {
                   <div className="flex items-center justify-between gap-4 mb-1">
                     <h3 className="font-semibold flex-1">{notification.title}</h3>
                     <div className="text-sm text-gray-400 whitespace-nowrap">
-                      {new Date(notification.createdAt).toLocaleString('ja-JP', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatDateTime(notification.createdAt)}
                     </div>
                   </div>
 

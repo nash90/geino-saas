@@ -1,10 +1,12 @@
 import { TaskCommandService } from '../../services/tasks/TaskCommandService';
+import { DateValidationService } from '../../services/validation/DateValidationService';
 import type { AuthContext } from '../../types';
 
 export async function updateTaskHandler(c: AuthContext) {
   const db = c.get('db');
   const user = c.get('user');
   const taskCommandService = new TaskCommandService(db, c.env);
+  const dateValidator = new DateValidationService();
 
   // Get task ID from path parameter
   const taskId = c.req.param('taskId');
@@ -12,6 +14,14 @@ export async function updateTaskHandler(c: AuthContext) {
   // Parse request body
   const body = await c.req.json();
   const { title, description, statusCode, typeCode, priorityCode, assignedTo, deadline } = body;
+
+  // Validate deadline ISO string format if provided
+  if (deadline) {
+    const isoValidation = dateValidator.validateISODateString(deadline, 'deadline');
+    if (isoValidation) {
+      return c.json({ error: isoValidation.error }, 400);
+    }
+  }
 
   // Call service layer (permission check is done inside the service)
   const result = await taskCommandService.updateTask(
@@ -23,7 +33,7 @@ export async function updateTaskHandler(c: AuthContext) {
       typeCode,
       priorityCode,
       assignedTo,
-      deadline: deadline ? new Date(deadline) : undefined,
+      deadline: deadline ? new Date(deadline) : null,
     },
     user.id
   );

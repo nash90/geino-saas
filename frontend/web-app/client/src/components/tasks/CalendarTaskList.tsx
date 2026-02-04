@@ -1,5 +1,6 @@
 import type { TaskWithDetails } from "@/types/entities";
 import { TaskStatus } from "@/types/entities";
+import { formatDateTime } from "@/lib/date-utils";
 
 interface CalendarTaskListProps {
   selectedDate: Date | null;
@@ -54,7 +55,7 @@ export function CalendarTaskList({ selectedDate, tasks, onTaskClick }: CalendarT
               )}
               {task.deadline && (
                 <p className="text-xs text-gray-400 mt-1">
-                  期限: {new Date(task.deadline).toLocaleDateString("ja-JP")}
+                  期限: {formatDateTime(task.deadline)}
                 </p>
               )}
             </div>

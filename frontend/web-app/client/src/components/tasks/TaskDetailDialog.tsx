@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,10 +23,12 @@ import type { TaskWithComments, TaskCommentWithUser } from "@/types/entities";
 import { TaskStatus, TaskType } from "@/types/entities";
 import { usePermissions } from "@/hooks/usePermissions";
 import { CommentList } from "./CommentList";
+import { toLocalDateTimeString, formatDateTime } from "@/lib/date-utils";
 import { CommentInput } from "./CommentInput";
 import { AttachmentUpload } from "./AttachmentUpload";
 import { FilePreview } from "./FilePreview";
 import { useAuth } from "@/contexts/AuthContext";
+import { validateDateTimeInput, validateDeadlineValue } from "@/lib/validation/dateValidation";
 
 interface TaskDetailDialogProps {
   task: TaskWithComments | null;
@@ -57,6 +59,7 @@ export function TaskDetailDialog({
   const [loadingComments, setLoadingComments] = useState(false);
   const permissions = usePermissions();
   const { user } = useAuth();
+  const deadlineInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize edit form when task changes
   useEffect(() => {
@@ -65,7 +68,7 @@ export function TaskDetailDialog({
       setEditedDescription(task.description || "");
       setEditedStatusCode(task.statusCode);
       setEditedAssignedTo(task.assignedTo || "");
-      setEditedDeadline(task.deadline ? task.deadline.split('T')[0] : "");
+      setEditedDeadline(task.deadline ? toLocalDateTimeString(task.deadline) : "");
       setIsEditMode(false);
       fetchComments();
     }
@@ -105,13 +108,31 @@ export function TaskDetailDialog({
       return;
     }
 
+    // Validate deadline using input element if available
+    if (!editedDeadline && deadlineInputRef.current) {
+      const inputValidation = validateDateTimeInput(deadlineInputRef.current, false);
+      if (!inputValidation.valid && !inputValidation.isEmpty) {
+        toast.error(inputValidation.error || "無効な期限です");
+        return;
+      }
+    }
+
+    // Validate deadline value with business logic
+    if (editedDeadline) {
+      const deadlineValidation = validateDeadlineValue(editedDeadline, false);
+      if (!deadlineValidation.valid) {
+        toast.error(deadlineValidation.error || "無効な期限です");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const updateData: any = {
         title: editedTitle.trim(),
         description: editedDescription.trim() || undefined,
         assignedTo: editedAssignedTo || undefined,
-        deadline: editedDeadline ? new Date(editedDeadline).toISOString() : undefined,
+        deadline: editedDeadline ? new Date(editedDeadline).toISOString() : null,
       };
 
       // Only include statusCode if user has permission to change it
@@ -136,7 +157,7 @@ export function TaskDetailDialog({
       setEditedDescription(task.description || "");
       setEditedStatusCode(task.statusCode);
       setEditedAssignedTo(task.assignedTo || "");
-      setEditedDeadline(task.deadline ? task.deadline.split('T')[0] : "");
+      setEditedDeadline(task.deadline ? toLocalDateTimeString(task.deadline) : "");
     }
     setIsEditMode(false);
   };
@@ -277,7 +298,8 @@ export function TaskDetailDialog({
                 <div>
                   <label className="text-sm font-medium mb-1 block">期限</label>
                   <Input
-                    type="date"
+                    ref={deadlineInputRef}
+                    type="datetime-local"
                     value={editedDeadline}
                     onChange={(e) => setEditedDeadline(e.target.value)}
                   />
@@ -297,7 +319,7 @@ export function TaskDetailDialog({
                 )}
                 {task.deadline && (
                   <span className="ml-auto text-sm text-gray-500">
-                    期限 {new Date(task.deadline).toLocaleDateString("ja-JP")}
+                    期限 {formatDateTime(task.deadline)}
                   </span>
                 )}
               </div>

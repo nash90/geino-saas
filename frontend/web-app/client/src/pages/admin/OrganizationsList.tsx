@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatDate } from '@/lib/date-utils';
 import {
   Table,
   TableBody,
@@ -114,14 +115,6 @@ export default function OrganizationsList() {
   const handleMembersClose = () => {
     setIsMembersDialogOpen(false);
     setSelectedOrg(null);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
   };
 
   return (
