@@ -91,8 +91,10 @@ export async function buildNotificationData(
         projectId: payload.projectId,
         metadata: {
           actorUserId: payload.actorUserId,
-          oldStatus: payload.oldValue,
-          newStatus: payload.newValue,
+          oldStatusCode: payload.oldValue,    // Status code (1, 2, 3, etc.)
+          newStatusCode: payload.newValue,    // Status code (1, 2, 3, etc.)
+          oldStatusLabel: oldStatus,          // Status label (To Do, In Progress, etc.)
+          newStatusLabel: newStatus,          // Status label (To Do, In Progress, etc.)
         },
       };
 

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
-import { formatDateTime } from '@/lib/date-utils';
+import { TaskProgressNotificationItem } from '@/components/notifications/TaskProgressNotificationItem';
 
 export default function TasksProgress() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -97,42 +97,12 @@ export default function TasksProgress() {
               </div>
             ) : (
               notifications.map((notification) => (
-                <div
+                <TaskProgressNotificationItem
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                    notification.readAt ? '' : 'bg-blue-50'
-                  }`}
-                  onClick={() => {
-                    if (!notification.readAt) {
-                      handleMarkAsRead(notification.id);
-                    }
-                  }}
-                >
-                  {/* Line 1: Title | Date Time */}
-                  <div className="flex items-center justify-between gap-4 mb-1">
-                    <h3 className="font-semibold flex-1">{notification.title}</h3>
-                    <div className="text-sm text-gray-400 whitespace-nowrap">
-                      {formatDateTime(notification.createdAt)}
-                    </div>
-                  </div>
-
-                  {/* Line 2: Task name link */}
-                  {notification.taskId && notification.taskTitle && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Mark as read when clicking task link
-                        if (!notification.readAt) {
-                          handleMarkAsRead(notification.id);
-                        }
-                        handleTaskClick(notification.taskId!);
-                      }}
-                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      {notification.taskTitle}
-                    </button>
-                  )}
-                </div>
+                  notification={notification}
+                  onMarkAsRead={handleMarkAsRead}
+                  onTaskClick={handleTaskClick}
+                />
               ))
             )}
           </div>
