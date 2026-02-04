@@ -29,6 +29,7 @@ import { AttachmentUpload } from "./AttachmentUpload";
 import { FilePreview } from "./FilePreview";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateDateTimeInput, validateDeadlineValue } from "@/lib/validation/dateValidation";
+import { MESSAGES } from "@/constants/messages";
 
 interface TaskDetailDialogProps {
   task: TaskWithComments | null;
@@ -83,7 +84,7 @@ export function TaskDetailDialog({
       setComments(response.comments || []);
     } catch (error: any) {
       console.error("Failed to fetch comments:", error);
-      toast.error("コメントの読み込みに失敗しました");
+      toast.error(MESSAGES.COMMENT.COMMENT_LOAD_FAILED);
     } finally {
       setLoadingComments(false);
     }
@@ -104,7 +105,7 @@ export function TaskDetailDialog({
   const handleSave = async () => {
     if (!task) return;
     if (!editedTitle.trim()) {
-      toast.error("タスク名を入力してください");
+      toast.error(MESSAGES.TASK.TASK_TITLE_REQUIRED);
       return;
     }
 
@@ -112,7 +113,7 @@ export function TaskDetailDialog({
     if (!editedDeadline && deadlineInputRef.current) {
       const inputValidation = validateDateTimeInput(deadlineInputRef.current, false);
       if (!inputValidation.valid && !inputValidation.isEmpty) {
-        toast.error(inputValidation.error || "無効な期限です");
+        toast.error(inputValidation.error || MESSAGES.VALIDATION.DEADLINE_INVALID);
         return;
       }
     }
@@ -121,7 +122,7 @@ export function TaskDetailDialog({
     if (editedDeadline) {
       const deadlineValidation = validateDeadlineValue(editedDeadline, false);
       if (!deadlineValidation.valid) {
-        toast.error(deadlineValidation.error || "無効な期限です");
+        toast.error(deadlineValidation.error || MESSAGES.VALIDATION.DEADLINE_INVALID);
         return;
       }
     }
@@ -141,11 +142,11 @@ export function TaskDetailDialog({
       }
 
       await tasksApi.update(task.id, updateData);
-      toast.success("タスクが更新されました");
+      toast.success(MESSAGES.TASK.TASK_UPDATED_SUCCESS);
       setIsEditMode(false);
       onTaskUpdated();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "タスクの更新に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.TASK.TASK_UPDATE_FAILED);
     } finally {
       setLoading(false);
     }
@@ -168,11 +169,11 @@ export function TaskDetailDialog({
     setLoading(true);
     try {
       await tasksApi.duplicate(task.id);
-      toast.success("タスクが複製されました");
+      toast.success(MESSAGES.TASK.TASK_DUPLICATED_SUCCESS);
       onTaskUpdated();
       onClose();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "タスクの複製に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.TASK.TASK_DUPLICATE_FAILED);
     } finally {
       setLoading(false);
     }
@@ -340,10 +341,10 @@ export function TaskDetailDialog({
                 onDelete={async (attachmentId) => {
                   try {
                     await uploadsApi.deleteAttachment(attachmentId);
-                    toast.success("ファイルを削除しました");
+                    toast.success(MESSAGES.FILE.FILE_DELETED_SUCCESS);
                     onTaskUpdated();
                   } catch (error: any) {
-                    toast.error(error.response?.data?.error || "削除に失敗しました");
+                    toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_DELETE_FAILED);
                   }
                 }}
                 canDelete={canEdit}

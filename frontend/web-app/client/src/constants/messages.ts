@@ -45,8 +45,8 @@ export const TASK_MESSAGES = {
   // Updates
   TASK_UPDATED_SUCCESS: "タスクが更新されました",
   TASK_UPDATE_FAILED: "タスクの更新に失敗しました",
-  TASK_STATUS_UPDATED: "Task status updated",
-  TASK_STATUS_UPDATE_FAILED: "Failed to update task",
+  TASK_STATUS_UPDATED: "タスクのステータスが更新されました",
+  TASK_STATUS_UPDATE_FAILED: "タスクの更新に失敗しました",
 
   // Deletion
   TASK_DELETED_SUCCESS: "タスクが削除されました",
@@ -57,11 +57,11 @@ export const TASK_MESSAGES = {
   TASK_DUPLICATE_FAILED: "タスクの複製に失敗しました",
 
   // Loading
-  TASK_LOAD_FAILED: "Failed to load tasks",
-  TASK_DETAILS_LOAD_FAILED: "Failed to load task details",
+  TASK_LOAD_FAILED: "タスクの読み込みに失敗しました",
+  TASK_DETAILS_LOAD_FAILED: "タスク詳細の読み込みに失敗しました",
 
   // Calendar
-  CALENDAR_TASKS_LOAD_FAILED: "Failed to load calendar tasks",
+  CALENDAR_TASKS_LOAD_FAILED: "カレンダータスクの読み込みに失敗しました",
 } as const;
 
 // ============================================================================
@@ -70,19 +70,19 @@ export const TASK_MESSAGES = {
 
 export const PROJECT_MESSAGES = {
   // Creation
-  PROJECT_CREATED_SUCCESS: "プロジェクトが作成されました",
+  PROJECT_CREATED_SUCCESS: "プロジェクトを作成しました",
   PROJECT_CREATE_FAILED: "プロジェクトの作成に失敗しました",
 
   // Updates
-  PROJECT_UPDATED_SUCCESS: "プロジェクトが更新されました",
+  PROJECT_UPDATED_SUCCESS: "プロジェクトを更新しました",
   PROJECT_UPDATE_FAILED: "プロジェクトの更新に失敗しました",
 
   // Deletion
-  PROJECT_DELETED_SUCCESS: "プロジェクトが削除されました",
+  PROJECT_DELETED_SUCCESS: "プロジェクトを削除しました",
   PROJECT_DELETE_FAILED: "プロジェクトの削除に失敗しました",
 
   // Loading
-  PROJECT_LOAD_FAILED: "Failed to load project data",
+  PROJECT_LOAD_FAILED: "プロジェクトの読み込みに失敗しました",
 } as const;
 
 // ============================================================================
@@ -122,8 +122,80 @@ export const AUTH_MESSAGES = {
 
   // Unauthorized
   UNAUTHORIZED: "権限がありません",
-  NO_PERMISSION_CREATE_TASK: "You don't have permission to create tasks",
-  NO_PERMISSION_MOVE_TASK: "You don't have permission to move this task",
+  NO_PERMISSION_CREATE_TASK: "タスクを作成する権限がありません",
+  NO_PERMISSION_MOVE_TASK: "このタスクを移動する権限がありません",
+  NO_PERMISSION_CHANGE_STATUS: "タスクのステータスを変更する権限がありません。プロジェクトマネージャーのみがステータスを変更できます。",
+} as const;
+
+// ============================================================================
+// Comment Management
+// ============================================================================
+
+export const COMMENT_MESSAGES = {
+  // Creation
+  COMMENT_ADDED_SUCCESS: "コメントを追加しました",
+  COMMENT_ADD_FAILED: "コメントの追加に失敗しました",
+  COMMENT_OR_FILE_REQUIRED: "コメントまたはファイルを入力してください",
+
+  // Deletion
+  COMMENT_DELETED_SUCCESS: "コメントを削除しました",
+  COMMENT_DELETE_FAILED: "コメントの削除に失敗しました",
+
+  // Loading
+  COMMENT_LOAD_FAILED: "コメントの読み込みに失敗しました",
+} as const;
+
+// ============================================================================
+// File & Attachment Management
+// ============================================================================
+
+export const FILE_MESSAGES = {
+  // Upload
+  FILE_UPLOADED_SUCCESS: "ファイルをアップロードしました",
+  FILE_UPLOAD_FAILED: "アップロードに失敗しました",
+
+  // Download
+  FILE_DOWNLOADED_SUCCESS: "ファイルをダウンロードしました",
+  FILE_DOWNLOAD_FAILED: "ダウンロードに失敗しました",
+
+  // Deletion
+  FILE_DELETED_SUCCESS: "ファイルを削除しました",
+  FILE_DELETE_FAILED: "削除に失敗しました",
+  ATTACHMENT_DELETED_SUCCESS: "添付ファイルを削除しました",
+  ATTACHMENT_DELETE_FAILED: "添付ファイルの削除に失敗しました",
+} as const;
+
+// ============================================================================
+// Validation Messages
+// ============================================================================
+
+export const VALIDATION_MESSAGES = {
+  // Date/Time Validation
+  DATE_INVALID_FORMAT: "無効な日付形式です",
+  DATE_INVALID: "無効な日付です",
+  DATE_REQUIRED: "期限を入力してください",
+  DATE_FORMAT_INCORRECT: "日付形式が正しくありません",
+  DATE_FORMAT_INCORRECT_DATETIME: "日付形式が正しくありません (YYYY-MM-DDTHH:mm)",
+  DATE_BELOW_MIN: "指定された最小日時より前の日付は選択できません",
+  DATE_ABOVE_MAX: "指定された最大日時より後の日付は選択できません",
+  DATE_STEP_MISMATCH: "指定された時間間隔に合わせてください",
+  DEADLINE_MUST_BE_FUTURE: "期限は現在時刻より後に設定してください",
+  DEADLINE_TOO_FAR_FUTURE: "期限は{years}年以内に設定してください",
+  DEADLINE_INVALID: "無効な期限です",
+  DATE_ISO_INVALID: "無効なISO日付形式です",
+} as const;
+
+// ============================================================================
+// Notification Management
+// ============================================================================
+
+export const NOTIFICATION_MESSAGES = {
+  // Actions
+  NOTIFICATIONS_MARKED_READ: "すべての通知を既読にしました",
+  NOTIFICATIONS_MARK_READ_FAILED: "通知の更新に失敗しました",
+
+  // Loading
+  NOTIFICATIONS_LOAD_FAILED: "通知の読み込みに失敗しました",
 } as const;
 
 // ============================================================================
@@ -164,6 +236,10 @@ export const MESSAGES = {
   PROJECT: PROJECT_MESSAGES,
   ORGANIZATION: ORGANIZATION_MESSAGES,
   AUTH: AUTH_MESSAGES,
+  COMMENT: COMMENT_MESSAGES,
+  FILE: FILE_MESSAGES,
+  VALIDATION: VALIDATION_MESSAGES,
+  NOTIFICATION: NOTIFICATION_MESSAGES,
   COMMON: COMMON_MESSAGES,
 } as const;
 

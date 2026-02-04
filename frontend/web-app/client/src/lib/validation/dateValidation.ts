@@ -7,6 +7,8 @@
  * - Invalid input (user entered malformed date)
  */
 
+import { MESSAGES } from '@/constants/messages';
+
 export interface DateTimeValidationResult {
   valid: boolean;
   error?: string;
@@ -42,7 +44,7 @@ export function validateDateTimeInput(
     return {
       valid: false,
       isEmpty: false,
-      error: '無効な日付形式です'
+      error: MESSAGES.VALIDATION.DATE_INVALID_FORMAT
     };
   }
 
@@ -52,7 +54,7 @@ export function validateDateTimeInput(
       return {
         valid: false,
         isEmpty: true,
-        error: '期限を入力してください'
+        error: MESSAGES.VALIDATION.DATE_REQUIRED
       };
     }
     // Empty but not required - this is valid
@@ -64,7 +66,7 @@ export function validateDateTimeInput(
     return {
       valid: false,
       isEmpty: false,
-      error: '日付形式が正しくありません'
+      error: MESSAGES.VALIDATION.DATE_FORMAT_INCORRECT
     };
   }
 
@@ -73,7 +75,7 @@ export function validateDateTimeInput(
     return {
       valid: false,
       isEmpty: false,
-      error: '指定された最小日時より前の日付は選択できません'
+      error: MESSAGES.VALIDATION.DATE_BELOW_MIN
     };
   }
 
@@ -81,7 +83,7 @@ export function validateDateTimeInput(
     return {
       valid: false,
       isEmpty: false,
-      error: '指定された最大日時より後の日付は選択できません'
+      error: MESSAGES.VALIDATION.DATE_ABOVE_MAX
     };
   }
 
@@ -90,7 +92,7 @@ export function validateDateTimeInput(
     return {
       valid: false,
       isEmpty: false,
-      error: '指定された時間間隔に合わせてください'
+      error: MESSAGES.VALIDATION.DATE_STEP_MISMATCH
     };
   }
 
@@ -100,7 +102,7 @@ export function validateDateTimeInput(
     return {
       valid: false,
       isEmpty: false,
-      error: '無効な日付です'
+      error: MESSAGES.VALIDATION.DATE_INVALID
     };
   }
 
@@ -125,7 +127,7 @@ export function validateDateTimeValue(
       return {
         valid: false,
         isEmpty: true,
-        error: '期限を入力してください'
+        error: MESSAGES.VALIDATION.DATE_REQUIRED
       };
     }
     return { valid: true, isEmpty: true };
@@ -137,7 +139,7 @@ export function validateDateTimeValue(
     return {
       valid: false,
       isEmpty: false,
-      error: '日付形式が正しくありません (YYYY-MM-DDTHH:mm)'
+      error: MESSAGES.VALIDATION.DATE_FORMAT_INCORRECT_DATETIME
     };
   }
 
@@ -147,7 +149,7 @@ export function validateDateTimeValue(
     return {
       valid: false,
       isEmpty: false,
-      error: '無効な日付です'
+      error: MESSAGES.VALIDATION.DATE_INVALID
     };
   }
 
@@ -183,7 +185,7 @@ export function validateDeadlineValue(
     return {
       valid: false,
       isEmpty: false,
-      error: '無効な日付です'
+      error: MESSAGES.VALIDATION.DATE_INVALID
     };
   }
 
@@ -194,7 +196,7 @@ export function validateDeadlineValue(
     return {
       valid: false,
       isEmpty: false,
-      error: '期限は現在時刻より後に設定してください'
+      error: MESSAGES.VALIDATION.DEADLINE_MUST_BE_FUTURE
     };
   }
 
@@ -206,7 +208,7 @@ export function validateDeadlineValue(
     return {
       valid: false,
       isEmpty: false,
-      error: `期限は${maxYearsInFuture}年以内に設定してください`
+      error: MESSAGES.VALIDATION.DEADLINE_TOO_FAR_FUTURE.replace('{years}', maxYearsInFuture.toString())
     };
   }
 
@@ -230,7 +232,7 @@ export function validateISODateString(isoString: string | undefined): DateTimeVa
     return {
       valid: false,
       isEmpty: false,
-      error: '無効なISO日付形式です'
+      error: MESSAGES.VALIDATION.DATE_ISO_INVALID
     };
   }
 

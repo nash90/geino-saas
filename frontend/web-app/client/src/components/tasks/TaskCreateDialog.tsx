@@ -22,6 +22,7 @@ import { tasksApi } from "@/api/tasks";
 import type { CreateTaskRequest } from "@/types/api";
 import { TaskStatus } from "@/types/entities";
 import { validateDateTimeInput, validateDeadlineValue } from "@/lib/validation/dateValidation";
+import { MESSAGES } from "@/constants/messages";
 
 interface TaskCreateDialogProps {
   open: boolean;
@@ -51,7 +52,7 @@ export function TaskCreateDialog({
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      toast.error("タスク名を入力してください");
+      toast.error(MESSAGES.TASK.TASK_TITLE_REQUIRED);
       return;
     }
 
@@ -59,7 +60,7 @@ export function TaskCreateDialog({
     if (deadline && deadlineInputRef.current) {
       const inputValidation = validateDateTimeInput(deadlineInputRef.current, false);
       if (!inputValidation.valid && !inputValidation.isEmpty) {
-        toast.error(inputValidation.error || "無効な期限です");
+        toast.error(inputValidation.error || MESSAGES.VALIDATION.DEADLINE_INVALID);
         return;
       }
     }
@@ -68,7 +69,7 @@ export function TaskCreateDialog({
     if (deadline) {
       const deadlineValidation = validateDeadlineValue(deadline, false);
       if (!deadlineValidation.valid) {
-        toast.error(deadlineValidation.error || "無効な期限です");
+        toast.error(deadlineValidation.error || MESSAGES.VALIDATION.DEADLINE_INVALID);
         return;
       }
     }
@@ -85,11 +86,11 @@ export function TaskCreateDialog({
       };
 
       await tasksApi.create(projectId, data);
-      toast.success("タスクが作成されました");
+      toast.success(MESSAGES.TASK.TASK_CREATED_SUCCESS);
       onTaskCreated();
       handleClose();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "タスクの作成に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.TASK.TASK_CREATE_FAILED);
     } finally {
       setLoading(false);
     }

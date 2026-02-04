@@ -15,6 +15,7 @@ import { uploadsApi } from "@/api/uploads";
 import { toast } from "sonner";
 import { formatMentionsForDisplay } from "@/lib/mentionUtils";
 import type { TaskCommentWithUser } from "@/types/entities";
+import { MESSAGES } from "@/constants/messages";
 
 interface CommentListProps {
   comments: TaskCommentWithUser[];
@@ -55,9 +56,9 @@ export function CommentList({
     setDeleting(true);
     try {
       await onDeleteComment(commentToDelete);
-      toast.success("コメントを削除しました");
+      toast.success(MESSAGES.COMMENT.COMMENT_DELETED_SUCCESS);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "削除に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.COMMENT.COMMENT_DELETE_FAILED);
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -69,13 +70,13 @@ export function CommentList({
     setDeletingAttachment(attachmentId);
     try {
       await uploadsApi.deleteAttachment(attachmentId);
-      toast.success("添付ファイルを削除しました");
+      toast.success(MESSAGES.FILE.ATTACHMENT_DELETED_SUCCESS);
       // Refresh comments to reflect deletion
       if (onRefresh) {
         onRefresh();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || "削除に失敗しました");
+      toast.error(error.response?.data?.error || MESSAGES.FILE.ATTACHMENT_DELETE_FAILED);
     } finally {
       setDeletingAttachment(null);
     }
