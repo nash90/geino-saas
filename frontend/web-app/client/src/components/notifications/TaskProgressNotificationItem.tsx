@@ -14,7 +14,7 @@ export function TaskProgressNotificationItem({
 }: TaskProgressNotificationItemProps) {
   const metadata = notification.metadata ? JSON.parse(notification.metadata) : {};
 
-  // Build message from metadata if main message is empty (for old notifications)
+  // Build message from metadata if main message is empty (safety fallback)
   const displayMessage = notification.message || 
     (metadata.oldStatusLabel && metadata.newStatusLabel
       ? `タスクのステータスを「${metadata.oldStatusLabel}」から「${metadata.newStatusLabel}」に変更しました`
