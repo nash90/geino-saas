@@ -30,6 +30,7 @@ export const MEMBER_MESSAGES = {
   USER_NOT_FOUND: "このメールアドレスのユーザーが見つかりませんでした",
   USER_ALREADY_PROJECT_MEMBER: "このユーザーはすでにプロジェクトのメンバーです",
   USER_ALREADY_ORGANIZATION_MEMBER: "このユーザーはすでに組織のメンバーです",
+  USER_ALREADY_SELECTED: "このユーザーはすでに選択されています",
   USER_SEARCH_FAILED: "ユーザーの検索に失敗しました",
 
   // Actions

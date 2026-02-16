@@ -74,7 +74,7 @@ export function AddMemberSection({ members, onAddMember, actionLoading }: AddMem
 
   return (
     <div className="space-y-3">
-      <h3 className="font-medium text-sm">メンバーを追加</h3>
+      <h3 className="font-medium text-sm">組織マネージャーを追加</h3>
       
       {/* Selected User Display */}
       {selectedUser && (

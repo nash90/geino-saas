@@ -23,6 +23,7 @@ interface UpdateOrganizationDialogProps {
   onClose: () => void;
   organization: Organization;
   onSuccess: () => void;
+  isSystemAdmin?: boolean; // Future-proofing for conditional features
 }
 
 export function UpdateOrganizationDialog({
@@ -30,6 +31,7 @@ export function UpdateOrganizationDialog({
   onClose,
   organization,
   onSuccess,
+  isSystemAdmin = false,
 }: UpdateOrganizationDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');

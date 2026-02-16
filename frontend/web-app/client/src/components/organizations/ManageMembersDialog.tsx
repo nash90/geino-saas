@@ -85,7 +85,7 @@ export function ManageMembersDialog({ open, onClose, organization }: ManageMembe
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
         <div className="overflow-x-auto">
           <DialogHeader>
-            <DialogTitle>メンバー管理 - {organization.name}</DialogTitle>
+            <DialogTitle>組織マネージャー管理 - {organization.name}</DialogTitle>
             <DialogDescription>
               組織マネージャーの追加・削除を行います。
             </DialogDescription>
