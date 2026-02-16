@@ -31,7 +31,8 @@ export default function OrganizationManager() {
 
   const isSystemAdmin = user?.systemRoleCode === 1;
   const isOrganizationManager = userOrganizations.length > 0;
-  const hasAccess = isSystemAdmin || isOrganizationManager;
+  // Only Organization Managers can access this page (System Admins use /system-admin)
+  const hasAccess = isOrganizationManager && !isSystemAdmin;
 
   // Redirect users without access to home page
   useEffect(() => {

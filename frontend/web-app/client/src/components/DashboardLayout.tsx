@@ -78,8 +78,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/projects", label: "プロジェクト一覧", icon: FolderKanban },
     // { path: "/invites", label: "招待アカウント一覧", icon: UserPlus },
     { path: "/tasks-progress", label: "進捗ありタスク", icon: ListTodo },
-    // Both System Admin and Organization Manager see "組織管理"
-    ...(isSystemAdmin || isOrganizationManager ? [
+    // Only Organization Manager sees "組織管理" (System Admin uses /system-admin instead)
+    ...(isOrganizationManager && !isSystemAdmin ? [
       { path: "/organization-manager", label: "組織管理", icon: Building2 },
     ] : []),
     // System Admin sees "システム管理" (includes both users and organizations tabs)
