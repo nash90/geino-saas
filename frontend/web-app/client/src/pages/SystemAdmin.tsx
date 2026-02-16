@@ -60,8 +60,7 @@ export default function SystemAdmin() {
       setUsers(data.users);
       setTotalPages(data.pagination.totalPages);
       setTotalUsers(data.pagination.total);
-    } catch (err: any) {
-      console.error('Failed to load users:', err);
+    } catch (err) {
       const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_LIST_LOAD_FAILED);
       setError(errorMessage);
     } finally {
@@ -99,8 +98,7 @@ export default function SystemAdmin() {
       setIsRoleDialogOpen(false);
       setSelectedUser(null);
       setNewRoleCode('');
-    } catch (err: any) {
-      console.error('Failed to update role:', err);
+    } catch (err) {
       const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_UPDATE_FAILED);
       setError(errorMessage);
     } finally {
@@ -121,9 +119,8 @@ export default function SystemAdmin() {
       
       setIsDeleteDialogOpen(false);
       setSelectedUser(null);
-    } catch (err: any) {
-      console.error('Failed to delete user:', err);
-      const errorMessage = getErrorMessage(err, 'ユーザーの削除に失敗しました');
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_DELETE_FAILED);
       setError(errorMessage);
     } finally {
       setActionLoading(false);

@@ -29,7 +29,7 @@ export async function listProjectsHandler(c: AuthContext) {
   if (!result.success) {
     return c.json({ 
       error: result.error,
-      errorCode: ErrorCodes.PROJECT_UPDATE_FAILED
+      errorCode: ErrorCodes.PROJECT_LIST_LOAD_FAILED
     }, 500);
   }
 

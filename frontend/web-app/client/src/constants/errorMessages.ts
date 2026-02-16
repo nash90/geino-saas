@@ -106,6 +106,7 @@ export const OPERATION_ERROR_MESSAGES = {
   // User operations
   USER_LOAD_FAILED: 'ユーザー情報の読み込みに失敗しました',
   USER_UPDATE_FAILED: 'ユーザー情報の更新に失敗しました',
+  USER_DELETE_FAILED: 'ユーザーの削除に失敗しました',
   USER_LIST_LOAD_FAILED: 'ユーザー一覧の取得に失敗しました',
 } as const;
 

@@ -84,7 +84,6 @@ export function TaskDetailDialog({
       const response = await tasksApi.listComments(task.id);
       setComments(response.comments || []);
     } catch (error) {
-      console.error("Failed to fetch comments:", error);
       handleApiError(error, MESSAGES.COMMENT.COMMENT_LOAD_FAILED);
     } finally {
       setLoadingComments(false);

@@ -8,6 +8,7 @@ import { useLocation } from 'wouter';
 import { TaskProgressNotificationItem } from '@/components/notifications/TaskProgressNotificationItem';
 import { handleApiError } from '@/lib/errorHandler';
 import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { MESSAGES } from '@/constants/messages';
 
 export default function TasksProgress() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -62,7 +63,7 @@ export default function TasksProgress() {
     try {
       await contextMarkAllAsRead('task_progress');
       loadNotifications();
-      toast.success('すべての通知を既読にしました');
+      toast.success(MESSAGES.NOTIFICATION.NOTIFICATIONS_MARKED_READ);
     } catch (error) {
       handleApiError(error, OPERATION_ERROR_MESSAGES.NOTIFICATION_UPDATE_FAILED);
     }

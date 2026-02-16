@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { formatDateTime } from '@/lib/date-utils';
 import { handleApiError } from '@/lib/errorHandler';
 import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { MESSAGES } from '@/constants/messages';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -54,7 +55,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead('bell');
-      toast.success('すべての通知を既読にしました');
+      toast.success(MESSAGES.NOTIFICATION.NOTIFICATIONS_MARKED_READ);
     } catch (error) {
       handleApiError(error, OPERATION_ERROR_MESSAGES.NOTIFICATION_UPDATE_FAILED);
     }

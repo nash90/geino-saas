@@ -23,6 +23,7 @@ import { AddMemberDialog } from "@/components/projects/AddMemberDialog";
 import { OrganizationMultiSelect } from "@/components/OrganizationMultiSelect";
 import { handleApiError } from "@/lib/errorHandler";
 import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
+import { MESSAGES } from "@/constants/messages";
 
 export default function Projects() {
   const { organizations } = useAuth();
@@ -144,7 +145,7 @@ export default function Projects() {
 
     try {
       await projectsApi.removeMember(selectedProject.id, userId);
-      toast.success('メンバーを削除しました');
+      toast.success(MESSAGES.MEMBER.MEMBER_REMOVED_SUCCESS);
       
       // Reload project details
       const data = await projectsApi.get(selectedProject.id);
@@ -186,7 +187,7 @@ export default function Projects() {
         endDate: data.endDate,
       });
 
-      toast.success('プロジェクトを作成しました');
+      toast.success(MESSAGES.PROJECT.PROJECT_CREATED_SUCCESS);
       setCreateDialogOpen(false);
       loadProjects();
     } catch (error) {
@@ -215,7 +216,7 @@ export default function Projects() {
         statusCode: data.statusCode,
       });
 
-      toast.success('プロジェクトを更新しました');
+      toast.success(MESSAGES.PROJECT.PROJECT_UPDATED_SUCCESS);
       setEditDialogOpen(false);
 
       // Reload project details

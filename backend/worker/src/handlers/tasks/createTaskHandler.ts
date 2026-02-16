@@ -65,7 +65,17 @@ export async function createTaskHandler(c: AuthContext) {
     const statusCode = result.code === 'NOT_FOUND' ? 404 :
                       result.code === 'FORBIDDEN' ? 403 :
                       result.code === 'INVALID_INPUT' ? 400 : 500;
-    return c.json({ error: result.error }, statusCode);
+    
+    // Map service error codes to ErrorCodes
+    const errorCode = result.code === 'NOT_FOUND' ? ErrorCodes.TASK_NOT_FOUND :
+                     result.code === 'FORBIDDEN' ? ErrorCodes.NO_TASK_CREATE :
+                     result.code === 'INVALID_INPUT' ? ErrorCodes.INVALID_INPUT :
+                     ErrorCodes.TASK_CREATE_FAILED;
+    
+    return c.json({ 
+      error: result.error,
+      errorCode 
+    }, statusCode);
   }
 
   return c.json({
