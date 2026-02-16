@@ -1,74 +1,75 @@
-import { Button } from '@/components/ui/button';
-import { TaskStatus, NotificationType } from '@/types/entities';
 import type { Notification } from '@/api/notifications';
 import { formatDateTime } from '@/lib/date-utils';
 
 interface TaskProgressNotificationItemProps {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
 export function TaskProgressNotificationItem({
   notification,
-  onMarkAsRead
+  onMarkAsRead,
+  onTaskClick
 }: TaskProgressNotificationItemProps) {
   const metadata = notification.metadata ? JSON.parse(notification.metadata) : {};
 
-  const getStatusLabel = (statusCode: number): string => {
-    const status = Object.values(TaskStatus).find(s => s.code === statusCode);
-    return status?.label || '不明';
+  // Build message from metadata if main message is empty (safety fallback)
+  const displayMessage = notification.message || 
+    (metadata.oldStatusLabel && metadata.newStatusLabel
+      ? `タスクのステータスを「${metadata.oldStatusLabel}」から「${metadata.newStatusLabel}」に変更しました`
+      : '');
+
+  const handleClick = () => {
+    if (!notification.readAt) {
+      onMarkAsRead(notification.id);
+    }
+  };
+
+  const handleTaskClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!notification.readAt) {
+      onMarkAsRead(notification.id);
+    }
+    if (notification.taskId && onTaskClick) {
+      onTaskClick(notification.taskId);
+    }
   };
 
   return (
     <div
-      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-        notification.readAt
-          ? 'bg-white hover:bg-gray-50'
-          : 'bg-blue-50 hover:bg-blue-100 border-blue-200'
+      className={`p-4 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 ${
+        notification.readAt ? '' : 'bg-blue-50'
       }`}
-      onClick={() => onMarkAsRead(notification.id)}
+      onClick={handleClick}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold">{notification.title}</h3>
-            {!notification.readAt && (
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            )}
-          </div>
-          <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-
-          {/* Display status change if applicable */}
-          {notification.typeCode === NotificationType.TASK_STATUS_CHANGED.code &&
-           metadata.oldStatus &&
-           metadata.newStatus && (
-            <div className="flex items-center gap-2 text-sm mb-2">
-              <span className="px-2 py-1 bg-gray-100 rounded">
-                {getStatusLabel(metadata.oldStatus)}
-              </span>
-              <span>→</span>
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                {getStatusLabel(metadata.newStatus)}
-              </span>
-            </div>
+      {/* Title and Timestamp */}
+      <div className="flex items-center justify-between gap-4 mb-1">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">{notification.title}</h3>
+          {!notification.readAt && (
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
           )}
-
-          <p className="text-xs text-gray-400">
-            {formatDateTime(notification.createdAt)}
-          </p>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.location.href = '/taskboard';
-          }}
-        >
-          タスクを確認
-        </Button>
+        <span className="text-sm text-gray-400 whitespace-nowrap">
+          {formatDateTime(notification.createdAt)}
+        </span>
       </div>
+
+      {/* Status change message */}
+      {displayMessage && (
+        <p className="text-sm text-gray-700 mb-2">{displayMessage}</p>
+      )}
+
+      {/* Task title link */}
+      {notification.taskId && notification.taskTitle && (
+        <button
+          onClick={handleTaskClick}
+          className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          {notification.taskTitle}
+        </button>
+      )}
     </div>
   );
 }

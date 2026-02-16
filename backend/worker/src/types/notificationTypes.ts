@@ -2,6 +2,22 @@
  * Notification Type and Category Constants
  *
  * Keep in sync with frontend: /frontend/web-app/client/src/types/entities.ts
+ * 
+ * Email Delivery Strategy:
+ * - TASK_STATUS_CHANGED: In-app notification ONLY (no email) to reduce operational costs
+ * - All other notification types: In-app notification + Email delivery
+ * 
+ * TASK_STATUS_CHANGED Metadata Format:
+ * {
+ *   actorUserId: string,
+ *   oldStatusCode: number,      // Status code (1=To Do, 2=In Progress, 3=Done, etc.)
+ *   newStatusCode: number,      // Status code (1=To Do, 2=In Progress, 3=Done, etc.)
+ *   oldStatusLabel: string,     // Status label ("To Do", "In Progress", etc.)
+ *   newStatusLabel: string      // Status label ("To Do", "In Progress", etc.)
+ * }
+ * 
+ * Message Format Example:
+ * "山田太郎さんがタスクのステータスを「To Do」から「In Progress」に変更しました"
  */
 
 // Notification Category Codes

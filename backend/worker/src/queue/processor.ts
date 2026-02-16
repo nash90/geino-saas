@@ -5,12 +5,21 @@
 
 import { Resend } from 'resend';
 import { NotificationService } from '@/services/notifications/NotificationService';
+import { NotificationType } from '@/types/notificationTypes';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { Env } from '@/types/contextTypes';
 import { buildNotificationData } from './notificationBuilder';
 import { buildEmailContent } from './emailBuilder';
 import type { NotificationEventPayload } from './types';
+
+/**
+ * Notification types that should NOT send email (in-app only)
+ * Purpose: Reduce email volume and operational costs
+ */
+const EMAIL_DISABLED_TYPES = [
+  NotificationType.TASK_STATUS_CHANGED.code, // Status changes: in-app only
+];
 
 /**
  * Sleep utility for rate limiting
@@ -28,11 +37,15 @@ export async function processNotificationEvent(
   env: Env,
   db: any
 ): Promise<void> {
-  // 1. Create notification record in DB
+  // 1. Always create in-app notification record
   await createNotificationRecord(typeCode, payload, recipientId, notificationService, db);
 
-  // 2. Send email notification
-  await sendEmailNotification(typeCode, payload, recipientId, env, db);
+  // 2. Conditionally send email (skip for status changes and other disabled types)
+  if (!EMAIL_DISABLED_TYPES.includes(typeCode)) {
+    await sendEmailNotification(typeCode, payload, recipientId, env, db);
+  } else {
+    console.log(`📱 In-app only notification (type ${typeCode}), skipping email`);
+  }
 }
 
 /**

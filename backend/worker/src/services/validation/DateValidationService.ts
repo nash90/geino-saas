@@ -214,18 +214,20 @@ export class DateValidationService {
   }
 
   /**
-   * Validates a deadline with common business rules:
-   * - Must be valid ISO format
-   * - Must be in the future
-   * - Must be within reasonable range (not too far in future)
+   * Validates deadline for tasks
+   * - Must be ISO format
+   * - Must be a future date (if allowPast is false)
+   * - Must be within reasonable future (maxYearsInFuture)
    * 
    * @param deadline - Deadline to validate
    * @param maxYearsInFuture - Maximum years in the future allowed (default: 10)
+   * @param allowPast - Allow past dates (default: false). Set to true for task updates.
    * @returns ValidationError if invalid, null if valid
    */
   validateDeadline(
     deadline: Date | string | undefined,
-    maxYearsInFuture: number = 10
+    maxYearsInFuture: number = 10,
+    allowPast: boolean = false
   ): ValidationError | null {
     // Undefined/null is valid (deadline is optional)
     if (!deadline) {
@@ -239,9 +241,11 @@ export class DateValidationService {
     const isoError = this.validateISODateString(isoString, 'Deadline');
     if (isoError) return isoError;
 
-    // Validate future date
-    const futureError = this.validateFutureDate(deadline, 'Deadline', false);
-    if (futureError) return futureError;
+    // Validate future date (skip if allowPast is true)
+    if (!allowPast) {
+      const futureError = this.validateFutureDate(deadline, 'Deadline', false);
+      if (futureError) return futureError;
+    }
 
     // Validate reasonable future
     const reasonableError = this.validateReasonableFuture(

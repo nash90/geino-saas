@@ -109,7 +109,7 @@ export function TaskDetailDialog({
       return;
     }
 
-    // Validate deadline using input element if available
+    // Validate deadline using input element if available (format validation only)
     if (!editedDeadline && deadlineInputRef.current) {
       const inputValidation = validateDateTimeInput(deadlineInputRef.current, false);
       if (!inputValidation.valid && !inputValidation.isEmpty) {
@@ -118,9 +118,9 @@ export function TaskDetailDialog({
       }
     }
 
-    // Validate deadline value with business logic
+    // Validate deadline value with business logic (allow past dates for updates)
     if (editedDeadline) {
-      const deadlineValidation = validateDeadlineValue(editedDeadline, false);
+      const deadlineValidation = validateDeadlineValue(editedDeadline, true); // Allow past for updates
       if (!deadlineValidation.valid) {
         toast.error(deadlineValidation.error || MESSAGES.VALIDATION.DEADLINE_INVALID);
         return;
