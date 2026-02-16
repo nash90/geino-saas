@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -29,8 +31,8 @@ export default function Login() {
       });
       // Redirect to dashboard
       setLocation('/');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'ログインに失敗しました。認証情報を確認してください。');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.LOGIN_FAILED));
     } finally {
       setLoading(false);
     }

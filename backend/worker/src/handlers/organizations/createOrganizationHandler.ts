@@ -1,4 +1,5 @@
 import { OrganizationCreateService } from '../../services/organizations/OrganizationCreateService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function createOrganizationHandler(c: AuthContext) {
@@ -18,7 +19,8 @@ export async function createOrganizationHandler(c: AuthContext) {
 
   if (!result.success) {
     const statusCode = result.code === 'INVALID_INPUT' ? 400 : 500;
-    return c.json({ error: result.error }, statusCode);
+    const errorCode = result.code === 'INVALID_INPUT' ? ErrorCodes.INVALID_INPUT : ErrorCodes.ORGANIZATION_CREATE_FAILED;
+    return c.json({ error: result.error, errorCode }, statusCode);
   }
 
   return c.json({

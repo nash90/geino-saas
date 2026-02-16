@@ -7,6 +7,13 @@
  * - Maintain consistency in messaging
  */
 
+import {
+  HTTP_ERROR_MESSAGES,
+  OPERATION_ERROR_MESSAGES,
+  PERMISSION_ERROR_MESSAGES,
+  GENERAL_ERROR_MESSAGES,
+} from './errorMessages';
+
 // ============================================================================
 // User Search & Member Management
 // ============================================================================
@@ -241,6 +248,11 @@ export const MESSAGES = {
   VALIDATION: VALIDATION_MESSAGES,
   NOTIFICATION: NOTIFICATION_MESSAGES,
   COMMON: COMMON_MESSAGES,
+  // Error messages
+  HTTP_ERROR: HTTP_ERROR_MESSAGES,
+  OPERATION_ERROR: OPERATION_ERROR_MESSAGES,
+  PERMISSION_ERROR: PERMISSION_ERROR_MESSAGES,
+  GENERAL_ERROR: GENERAL_ERROR_MESSAGES,
 } as const;
 
 // Type exports for TypeScript support

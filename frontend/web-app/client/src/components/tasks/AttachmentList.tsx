@@ -16,6 +16,8 @@ import { uploadsApi } from "@/api/uploads";
 import { formatFileSize, getFileIconType, isImageFile } from "@/lib/fileUtils";
 import type { Attachment } from "@/types/entities";
 import { MESSAGES } from "@/constants/messages";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
 
 interface AttachmentListProps {
   attachments: Attachment[];
@@ -38,8 +40,8 @@ export function AttachmentList({ attachments, onDelete, canDelete }: AttachmentL
       setDownloading(attachment.id);
       await uploadsApi.downloadAttachment(attachment.id, attachment.fileName);
       toast.success(MESSAGES.FILE.FILE_DOWNLOADED_SUCCESS);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_DOWNLOAD_FAILED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.FILE_DOWNLOAD_FAILED);
     } finally {
       setDownloading(null);
     }
@@ -57,8 +59,8 @@ export function AttachmentList({ attachments, onDelete, canDelete }: AttachmentL
       setDeleting(attachmentToDelete);
       await onDelete(attachmentToDelete);
       toast.success(MESSAGES.FILE.FILE_DELETED_SUCCESS);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_DELETE_FAILED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.FILE_DELETE_FAILED);
     } finally {
       setDeleting(null);
       setDeleteDialogOpen(false);

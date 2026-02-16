@@ -1,4 +1,5 @@
 import { UserQueryService } from '../../services/users/UserQueryService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { OptionalAuthContext } from '../../types';
 
 export async function listUsersHandler(c: OptionalAuthContext) {
@@ -14,7 +15,10 @@ export async function listUsersHandler(c: OptionalAuthContext) {
   const result = await userQueryService.listUsers(page, limit, search);
 
   if (!result.success) {
-    return c.json({ error: result.error }, 500);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.USER_SEARCH_FAILED
+    }, 500);
   }
 
   return c.json({

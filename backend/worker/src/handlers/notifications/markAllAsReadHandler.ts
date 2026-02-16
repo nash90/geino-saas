@@ -1,6 +1,7 @@
 import type { AuthContext } from '@/types/contextTypes';
 import { NotificationService } from '@/services/notifications/NotificationService';
 import { NotificationCategory } from '@/types/notificationTypes';
+import { ErrorCodes } from '@/constants/errorCodes';
 
 export async function markAllAsReadHandler(c: AuthContext) {
   const user = c.get('user');
@@ -20,7 +21,10 @@ export async function markAllAsReadHandler(c: AuthContext) {
   const result = await notificationService.markAllAsRead(user.id, categoryCode);
 
   if (!result.success) {
-    return c.json({ error: result.error }, 400);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.NOTIFICATION_UPDATE_FAILED
+    }, 400);
   }
 
   return c.json({ success: true, message: result.data.message });

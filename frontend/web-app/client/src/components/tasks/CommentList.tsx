@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { formatMentionsForDisplay } from "@/lib/mentionUtils";
 import type { TaskCommentWithUser } from "@/types/entities";
 import { MESSAGES } from "@/constants/messages";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
 
 interface CommentListProps {
   comments: TaskCommentWithUser[];
@@ -57,8 +59,8 @@ export function CommentList({
     try {
       await onDeleteComment(commentToDelete);
       toast.success(MESSAGES.COMMENT.COMMENT_DELETED_SUCCESS);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.COMMENT.COMMENT_DELETE_FAILED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.COMMENT_DELETE_FAILED);
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
@@ -75,8 +77,8 @@ export function CommentList({
       if (onRefresh) {
         onRefresh();
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.FILE.ATTACHMENT_DELETE_FAILED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.ATTACHMENT_DELETE_FAILED);
     } finally {
       setDeletingAttachment(null);
     }

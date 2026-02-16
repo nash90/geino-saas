@@ -7,6 +7,8 @@ import { uploadsApi } from "@/api/uploads";
 import { getFileValidationError, formatFileSize } from "@/lib/fileUtils";
 import type { Attachment } from "@/types/entities";
 import { MESSAGES } from "@/constants/messages";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
 
 interface AttachmentUploadProps {
   taskId?: string;
@@ -84,9 +86,8 @@ export function AttachmentUpload({
       setProgress(100);
       toast.success(MESSAGES.FILE.FILE_UPLOADED_SUCCESS);
       onUploadComplete(attachment);
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_UPLOAD_FAILED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.FILE_UPLOAD_FAILED);
     } finally {
       setUploading(false);
       setProgress(0);

@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -56,8 +58,8 @@ export default function Register() {
       setTimeout(() => {
         setLocation('/login');
       }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || '登録に失敗しました。もう一度お試しください。');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.REGISTER_FAILED));
     } finally {
       setLoading(false);
     }

@@ -21,6 +21,9 @@ import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { AddMemberDialog } from "@/components/projects/AddMemberDialog";
 import { OrganizationMultiSelect } from "@/components/OrganizationMultiSelect";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
+import { MESSAGES } from "@/constants/messages";
 
 export default function Projects() {
   const { organizations } = useAuth();
@@ -113,8 +116,7 @@ export default function Projects() {
       );
       setProjects(projectsWithMembers);
     } catch (error) {
-      console.error('Failed to load projects:', error);
-      toast.error('プロジェクトの読み込みに失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.PROJECT_LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -143,15 +145,14 @@ export default function Projects() {
 
     try {
       await projectsApi.removeMember(selectedProject.id, userId);
-      toast.success('メンバーを削除しました');
+      toast.success(MESSAGES.MEMBER.MEMBER_REMOVED_SUCCESS);
       
       // Reload project details
       const data = await projectsApi.get(selectedProject.id);
       setSelectedProject(data.project);
       loadProjects();
     } catch (error) {
-      console.error('Failed to remove member:', error);
-      toast.error('メンバーの削除に失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.MEMBER_REMOVE_FAILED);
     }
   };
 
@@ -186,12 +187,11 @@ export default function Projects() {
         endDate: data.endDate,
       });
 
-      toast.success('プロジェクトを作成しました');
+      toast.success(MESSAGES.PROJECT.PROJECT_CREATED_SUCCESS);
       setCreateDialogOpen(false);
       loadProjects();
     } catch (error) {
-      console.error('Failed to create project:', error);
-      toast.error('プロジェクトの作成に失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.PROJECT_CREATE_FAILED);
     } finally {
       setSubmitting(false);
     }
@@ -216,7 +216,7 @@ export default function Projects() {
         statusCode: data.statusCode,
       });
 
-      toast.success('プロジェクトを更新しました');
+      toast.success(MESSAGES.PROJECT.PROJECT_UPDATED_SUCCESS);
       setEditDialogOpen(false);
 
       // Reload project details
@@ -224,8 +224,7 @@ export default function Projects() {
       setSelectedProject(updatedData.project);
       loadProjects();
     } catch (error) {
-      console.error('Failed to update project:', error);
-      toast.error('プロジェクトの更新に失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.PROJECT_UPDATE_FAILED);
     } finally {
       setSubmitting(false);
     }

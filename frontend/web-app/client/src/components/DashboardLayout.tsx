@@ -7,6 +7,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { toast } from 'sonner';
 import { formatDateTime } from '@/lib/date-utils';
+import { handleApiError } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { MESSAGES } from '@/constants/messages';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -52,10 +55,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead('bell');
-      toast.success('すべての通知を既読にしました');
+      toast.success(MESSAGES.NOTIFICATION.NOTIFICATIONS_MARKED_READ);
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
-      toast.error('通知の更新に失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.NOTIFICATION_UPDATE_FAILED);
     }
   };
 

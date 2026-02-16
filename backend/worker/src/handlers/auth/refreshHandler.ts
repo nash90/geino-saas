@@ -1,5 +1,6 @@
 import { setCookie } from 'hono/cookie';
 import { createClient } from '@supabase/supabase-js';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { BaseContext } from '../../types';
 
 export async function refreshHandler(c: BaseContext) {
@@ -8,7 +9,10 @@ export async function refreshHandler(c: BaseContext) {
     const refreshToken = cookieHeader?.match(/refresh_token=([^;]+)/)?.[1];
 
     if (!refreshToken) {
-      return c.json({ error: 'No refresh token provided' }, 401);
+      return c.json({ 
+        error: 'No refresh token provided',
+        errorCode: ErrorCodes.UNAUTHORIZED
+      }, 401);
     }
 
     const supabase = createClient(
@@ -28,7 +32,10 @@ export async function refreshHandler(c: BaseContext) {
         code: error?.code,
         hasSession: !!data.session,
       });
-      return c.json({ error: error?.message || 'Failed to refresh token' }, 401);
+      return c.json({ 
+        error: error?.message || 'Failed to refresh token',
+        errorCode: ErrorCodes.TOKEN_REFRESH_FAILED
+      }, 401);
     }
 
     setCookie(c, 'access_token', data.session.access_token, {

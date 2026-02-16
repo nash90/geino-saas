@@ -1,4 +1,5 @@
 import { RegistrationService } from '../../services/auth/RegistrationService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { BaseContext } from '../../types';
 
 export async function registerHandler(c: BaseContext) {
@@ -16,7 +17,10 @@ export async function registerHandler(c: BaseContext) {
   });
 
   if (!result.success) {
-    return c.json({ error: result.error }, 400);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.REGISTRATION_FAILED
+    }, 400);
   }
 
   return c.json({ 

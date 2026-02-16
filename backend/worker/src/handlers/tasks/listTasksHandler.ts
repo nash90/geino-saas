@@ -1,6 +1,7 @@
 import { TaskQueryService } from '../../services/tasks/TaskQueryService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import type { AuthContext } from '../../types';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function listTasksHandler(c: AuthContext) {
   const db = c.get('db');
@@ -22,7 +23,10 @@ export async function listTasksHandler(c: AuthContext) {
   const hasAccess = await AuthorizationService.canViewTask(db, user, projectId);
 
   if (!hasAccess) {
-    return c.json({ error: 'Forbidden: You do not have access to this project' }, 403);
+    return c.json({ 
+      error: 'Forbidden: You do not have access to this project',
+      errorCode: ErrorCodes.NO_PROJECT_ACCESS 
+    }, 403);
   }
 
   // Call service layer

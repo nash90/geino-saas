@@ -2,6 +2,7 @@ import { TaskCommandService } from '../../services/tasks/TaskCommandService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import { DateValidationService } from '../../services/validation/DateValidationService';
 import type { AuthContext } from '../../types';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function createTaskHandler(c: AuthContext) {
   const db = c.get('db');
@@ -28,7 +29,10 @@ export async function createTaskHandler(c: AuthContext) {
   const hasAccess = await AuthorizationService.canCreateTask(db, user, projectId, statusCode);
 
   if (!hasAccess) {
-    return c.json({ error: 'Forbidden: You do not have permission to create tasks in this project' }, 403);
+    return c.json({ 
+      error: 'Forbidden: You do not have permission to create tasks in this project',
+      errorCode: ErrorCodes.NO_TASK_CREATE 
+    }, 403);
   }
 
   // Get user's project role for validation
@@ -61,7 +65,17 @@ export async function createTaskHandler(c: AuthContext) {
     const statusCode = result.code === 'NOT_FOUND' ? 404 :
                       result.code === 'FORBIDDEN' ? 403 :
                       result.code === 'INVALID_INPUT' ? 400 : 500;
-    return c.json({ error: result.error }, statusCode);
+    
+    // Map service error codes to ErrorCodes
+    const errorCode = result.code === 'NOT_FOUND' ? ErrorCodes.TASK_NOT_FOUND :
+                     result.code === 'FORBIDDEN' ? ErrorCodes.NO_TASK_CREATE :
+                     result.code === 'INVALID_INPUT' ? ErrorCodes.INVALID_INPUT :
+                     ErrorCodes.TASK_CREATE_FAILED;
+    
+    return c.json({ 
+      error: result.error,
+      errorCode 
+    }, statusCode);
   }
 
   return c.json({

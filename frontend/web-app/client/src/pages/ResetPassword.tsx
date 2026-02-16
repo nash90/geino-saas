@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { authApi } from '@/api/auth';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
@@ -72,8 +74,8 @@ export default function ResetPassword() {
       setTimeout(() => {
         setLocation('/login');
       }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'パスワードの更新に失敗しました。もう一度お試しください。');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.PASSWORD_RESET_FAILED));
     } finally {
       setLoading(false);
     }

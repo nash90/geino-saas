@@ -1,5 +1,6 @@
 import type { AuthContext } from '@/types/contextTypes';
 import { NotificationService } from '@/services/notifications/NotificationService';
+import { ErrorCodes } from '@/constants/errorCodes';
 
 export async function markAsReadHandler(c: AuthContext) {
   const user = c.get('user');
@@ -12,7 +13,10 @@ export async function markAsReadHandler(c: AuthContext) {
 
   if (!result.success) {
     const statusCode = result.code === 'NOTIFICATION_NOT_FOUND' ? 404 : 400;
-    return c.json({ error: result.error }, statusCode);
+    const errorCode = result.code === 'NOTIFICATION_NOT_FOUND' ? 
+      ErrorCodes.NOTIFICATION_NOT_FOUND : 
+      ErrorCodes.NOTIFICATION_UPDATE_FAILED;
+    return c.json({ error: result.error, errorCode }, statusCode);
   }
 
   return c.json({ success: true });

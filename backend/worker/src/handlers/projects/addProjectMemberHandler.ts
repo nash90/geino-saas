@@ -1,6 +1,7 @@
 import { ProjectCommandService } from '../../services/projects/ProjectCommandService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import type { AuthContext } from '../../types';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function addProjectMemberHandler(c: AuthContext) {
   const db = c.get('db');
@@ -14,7 +15,10 @@ export async function addProjectMemberHandler(c: AuthContext) {
   const hasAccess = await AuthorizationService.isProjectManagerOrAbove(db, user, projectId);
 
   if (!hasAccess) {
-    return c.json({ error: 'Forbidden: You do not have permission to manage this project' }, 403);
+    return c.json({ 
+      error: 'Forbidden: You do not have permission to manage this project',
+      errorCode: ErrorCodes.NO_MEMBER_MANAGE 
+    }, 403);
   }
 
   // Parse request body

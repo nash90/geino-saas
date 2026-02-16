@@ -26,6 +26,9 @@ import {
 } from "@/components/tasks";
 import { ProjectMultiSelect } from "@/components/ProjectMultiSelect";
 import { devError } from "@/lib/logger";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES, PERMISSION_ERROR_MESSAGES } from "@/constants/errorMessages";
+import { MESSAGES } from "@/constants/messages";
 
 type ColumnType = "hold" | "todo" | "inProgress" | "done";
 
@@ -140,8 +143,8 @@ export default function TaskBoard() {
       // Merge all tasks from different projects
       const allTasks = responses.flatMap(response => response.tasks);
       setTasks(allTasks);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to load project data");
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.PROJECT_LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -161,8 +164,8 @@ export default function TaskBoard() {
       // Merge all tasks from different projects
       const allTasks = responses.flatMap(response => response.tasks);
       setTasks(allTasks);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to load tasks");
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.TASK_LOAD_FAILED);
     }
   };
 
@@ -217,7 +220,7 @@ export default function TaskBoard() {
 
     // Check permission - must be able to change task status (PM+ only)
     if (!permissions.canChangeTaskStatus(activeTask)) {
-      toast.error("You don't have permission to change task status. Only Project Managers can change task status.");
+      toast.error(PERMISSION_ERROR_MESSAGES.NO_TASK_STATUS_CHANGE);
       return;
     }
 
@@ -238,9 +241,9 @@ export default function TaskBoard() {
 
     try {
       await tasksApi.updateStatus(active.id as string, newStatusCode);
-      toast.success("Task status updated");
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to update task");
+      toast.success(MESSAGES.TASK.TASK_STATUS_UPDATED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.TASK_STATUS_UPDATE_FAILED);
       loadTasks(); // Revert on error
     }
   };
@@ -250,7 +253,7 @@ export default function TaskBoard() {
     // Use the first selected project for creating tasks
     const primaryProject = selectedProjects[0];
     if (!permissions.canCreateTask(primaryProject, statusCode)) {
-      toast.error("You don't have permission to create tasks");
+      toast.error(PERMISSION_ERROR_MESSAGES.NO_TASK_CREATE);
       return;
     }
     setCreateDialogStatus(statusCode);
@@ -262,8 +265,8 @@ export default function TaskBoard() {
     try {
       const taskWithComments = await tasksApi.get(taskId);
       setSelectedTask(taskWithComments);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to load task details");
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.TASK_LOAD_FAILED);
     } finally {
       setLoadingTaskDetails(false);
     }

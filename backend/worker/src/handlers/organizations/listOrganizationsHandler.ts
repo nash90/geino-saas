@@ -1,4 +1,5 @@
 import { OrganizationQueryService } from '../../services/organizations/OrganizationQueryService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function listOrganizationsHandler(c: AuthContext) {
@@ -21,7 +22,10 @@ export async function listOrganizationsHandler(c: AuthContext) {
   );
 
   if (!result.success) {
-    return c.json({ error: result.error }, 500);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.ORGANIZATION_LIST_LOAD_FAILED
+    }, 500);
   }
 
   return c.json({

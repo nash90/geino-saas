@@ -1,6 +1,7 @@
 import { ProjectCommandService } from '../../services/projects/ProjectCommandService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import type { AuthContext } from '../../types';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function createProjectHandler(c: AuthContext) {
   const db = c.get('db');
@@ -15,7 +16,10 @@ export async function createProjectHandler(c: AuthContext) {
   const hasAccess = await AuthorizationService.isOrganizationManagerOrAbove(db, user, body.organizationId);
 
   if (!hasAccess) {
-    return c.json({ error: 'Forbidden: You do not have permission to create projects in this organization' }, 403);
+    return c.json({ 
+      error: 'Forbidden: You do not have permission to create projects in this organization',
+      errorCode: ErrorCodes.NO_PROJECT_CREATE 
+    }, 403);
   }
 
   // Call service layer

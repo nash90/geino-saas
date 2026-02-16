@@ -6,6 +6,9 @@ import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import { TaskProgressNotificationItem } from '@/components/notifications/TaskProgressNotificationItem';
+import { handleApiError } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { MESSAGES } from '@/constants/messages';
 
 export default function TasksProgress() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -41,8 +44,7 @@ export default function TasksProgress() {
         setTotalPages(currentPage + 1);
       }
     } catch (error) {
-      console.error('Failed to load notifications:', error);
-      toast.error('通知の読み込みに失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.NOTIFICATION_LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -61,10 +63,9 @@ export default function TasksProgress() {
     try {
       await contextMarkAllAsRead('task_progress');
       loadNotifications();
-      toast.success('すべての通知を既読にしました');
+      toast.success(MESSAGES.NOTIFICATION.NOTIFICATIONS_MARKED_READ);
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
-      toast.error('通知の更新に失敗しました');
+      handleApiError(error, OPERATION_ERROR_MESSAGES.NOTIFICATION_UPDATE_FAILED);
     }
   };
 

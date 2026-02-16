@@ -1,4 +1,5 @@
 import { FileUploadService } from '../../services/uploads/FileUploadService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 /**
@@ -18,12 +19,18 @@ export async function uploadFileHandler(c: AuthContext) {
     const commentId = formData.get('commentId') as string | null;
 
     if (!file) {
-      return c.json({ error: 'No file provided' }, 400);
+      return c.json({ 
+        error: 'No file provided',
+        errorCode: ErrorCodes.MISSING_REQUIRED_FIELD
+      }, 400);
     }
 
     // Validate file
     if (file.size > 25 * 1024 * 1024) {
-      return c.json({ error: 'File size exceeds 25MB limit' }, 413);
+      return c.json({ 
+        error: 'File size exceeds 25MB limit',
+        errorCode: ErrorCodes.FILE_TOO_LARGE
+      }, 413);
     }
 
     // Upload directly to R2
@@ -39,11 +46,17 @@ export async function uploadFileHandler(c: AuthContext) {
         where: (taskComments, { eq }) => eq(taskComments.id, commentId),
       });
       if (!comment) {
-        return c.json({ error: 'Comment not found' }, 404);
+        return c.json({ 
+          error: 'Comment not found',
+          errorCode: ErrorCodes.COMMENT_NOT_FOUND
+        }, 404);
       }
       fileKey = `tasks/${comment.taskId}/comments/${uploadId}-${sanitizedFileName}`;
     } else {
-      return c.json({ error: 'Either taskId or commentId must be provided' }, 400);
+      return c.json({ 
+        error: 'Either taskId or commentId must be provided',
+        errorCode: ErrorCodes.MISSING_REQUIRED_FIELD
+      }, 400);
     }
 
     // Upload to R2
@@ -69,14 +82,27 @@ export async function uploadFileHandler(c: AuthContext) {
       // If DB record creation failed, delete the file from R2
       await c.env.ATTACHMENTS_BUCKET.delete(fileKey);
 
+      let errorCode;
       const statusCode = result.code === 'NOT_FOUND' ? 404 :
                         result.code === 'FORBIDDEN' ? 403 : 500;
-      return c.json({ error: result.error }, statusCode);
+      
+      if (result.code === 'NOT_FOUND') {
+        errorCode = ErrorCodes.TASK_NOT_FOUND;
+      } else if (result.code === 'FORBIDDEN') {
+        errorCode = ErrorCodes.NO_TASK_ACCESS;
+      } else {
+        errorCode = ErrorCodes.FILE_UPLOAD_FAILED;
+      }
+      
+      return c.json({ error: result.error, errorCode }, statusCode);
     }
 
     return c.json({ attachment: result.data });
   } catch (error: any) {
     console.error('[uploadFileHandler] Error:', error);
-    return c.json({ error: error.message || 'Upload failed' }, 500);
+    return c.json({ 
+      error: error.message || 'Upload failed',
+      errorCode: ErrorCodes.FILE_UPLOAD_FAILED
+    }, 500);
   }
 }
