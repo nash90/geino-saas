@@ -2,6 +2,7 @@ import { ProjectQueryService } from '../../services/projects/ProjectQueryService
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import type { AuthContext } from '../../types';
 import { Profiler } from '../../lib/profiler';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function getProjectHandler(c: AuthContext) {
   const profiler = c.get('profiler');
@@ -36,7 +37,10 @@ export async function getProjectHandler(c: AuthContext) {
     if (!hasAccess) {
       const isMember = project.members.some(m => m.userId === user!.id);
       if (!isMember) {
-        return c.json({ error: 'Forbidden: You do not have access to this project' }, 403);
+        return c.json({ 
+          error: 'Forbidden: You do not have access to this project',
+          errorCode: ErrorCodes.NO_PROJECT_ACCESS 
+        }, 403);
       }
     }
   } else {

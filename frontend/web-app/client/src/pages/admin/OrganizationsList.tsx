@@ -26,6 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function OrganizationsList() {
   const { user } = useAuth();
@@ -59,9 +61,8 @@ export default function OrganizationsList() {
       setOrganizations(data.organizations);
       setTotalPages(data.pagination.totalPages);
       setTotalOrgs(data.pagination.total);
-    } catch (err: any) {
-      console.error('Failed to load organizations:', err);
-      setError(err.response?.data?.error || '組織一覧の取得に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.ORGANIZATION_LIST_LOAD_FAILED));
     } finally {
       setLoading(false);
     }
@@ -78,9 +79,8 @@ export default function OrganizationsList() {
       setIsDeleteDialogOpen(false);
       setSelectedOrg(null);
       await loadOrganizations();
-    } catch (err: any) {
-      console.error('Failed to delete organization:', err);
-      setError(err.response?.data?.error || '組織の削除に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.ORGANIZATION_DELETE_FAILED));
     } finally {
       setActionLoading(false);
     }

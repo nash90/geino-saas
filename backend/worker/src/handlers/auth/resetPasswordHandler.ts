@@ -1,4 +1,5 @@
 import { PasswordService } from '../../services/auth/PasswordService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { BaseContext } from '../../types';
 
 export async function resetPasswordHandler(c: BaseContext) {
@@ -14,7 +15,10 @@ export async function resetPasswordHandler(c: BaseContext) {
   const result = await passwordService.resetPassword(email, appUrl);
 
   if (!result.success) {
-    return c.json({ error: result.error }, 400);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.PASSWORD_RESET_FAILED
+    }, 400);
   }
 
   return c.json({ 

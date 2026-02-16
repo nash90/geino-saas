@@ -1,5 +1,6 @@
 import { authenticate } from '../../middleware/auth';
 import { LoginService } from '../../services/auth/LoginService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { OptionalAuthContext } from '../../types';
 
 export async function sessionHandler(c: OptionalAuthContext) {
@@ -24,6 +25,9 @@ export async function sessionHandler(c: OptionalAuthContext) {
     });
   } catch (error) {
     console.error('[Session Error]', error);
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ 
+      error: 'Unauthorized',
+      errorCode: ErrorCodes.UNAUTHORIZED
+    }, 401);
   }
 }

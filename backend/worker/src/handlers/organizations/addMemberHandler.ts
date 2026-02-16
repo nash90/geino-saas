@@ -1,4 +1,5 @@
 import { OrganizationMemberService } from '../../services/organizations/OrganizationMemberService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function addMemberHandler(c: AuthContext) {
@@ -24,10 +25,22 @@ export async function addMemberHandler(c: AuthContext) {
   );
 
   if (!result.success) {
+    let errorCode;
     const statusCode = result.code === 'NOT_FOUND' ? 404 :
                       result.code === 'ALREADY_EXISTS' ? 409 :
                       result.code === 'INVALID_INPUT' ? 400 : 500;
-    return c.json({ error: result.error }, statusCode);
+    
+    if (result.code === 'NOT_FOUND') {
+      errorCode = ErrorCodes.ORGANIZATION_NOT_FOUND;
+    } else if (result.code === 'ALREADY_EXISTS') {
+      errorCode = ErrorCodes.ALREADY_EXISTS;
+    } else if (result.code === 'INVALID_INPUT') {
+      errorCode = ErrorCodes.INVALID_INPUT;
+    } else {
+      errorCode = ErrorCodes.MEMBER_ADD_FAILED;
+    }
+    
+    return c.json({ error: result.error, errorCode }, statusCode);
   }
 
   return c.json({

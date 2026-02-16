@@ -23,6 +23,7 @@ import type { CreateTaskRequest } from "@/types/api";
 import { TaskStatus } from "@/types/entities";
 import { validateDateTimeInput, validateDeadlineValue } from "@/lib/validation/dateValidation";
 import { MESSAGES } from "@/constants/messages";
+import { handleApiError } from "@/lib/errorHandler";
 
 interface TaskCreateDialogProps {
   open: boolean;
@@ -89,8 +90,8 @@ export function TaskCreateDialog({
       toast.success(MESSAGES.TASK.TASK_CREATED_SUCCESS);
       onTaskCreated();
       handleClose();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.TASK.TASK_CREATE_FAILED);
+    } catch (error) {
+      handleApiError(error, MESSAGES.TASK.TASK_CREATE_FAILED);
     } finally {
       setLoading(false);
     }

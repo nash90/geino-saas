@@ -4,6 +4,7 @@ import { users } from '../db/schema';
 import type { OptionalAuthContext, AuthUser } from '../types';
 import { SystemRole } from '../types/codeTypes';
 import type { Profiler } from '../lib/profiler';
+import { ErrorCodes } from '../constants/errorCodes';
 
 function getCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -62,7 +63,10 @@ export function requireSystemAdmin() {
     const user = c.get('user');
     
     if (!user || user.systemRoleCode !== SystemRole.SYSTEM_ADMIN.code) {
-      return c.json({ error: 'Forbidden: System Admin access required' }, 403);
+      return c.json({ 
+        error: 'Forbidden: System Admin access required',
+        errorCode: ErrorCodes.SYSTEM_ADMIN_REQUIRED 
+      }, 403);
     }
     
     await next();

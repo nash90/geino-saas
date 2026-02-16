@@ -1,4 +1,5 @@
 import { UserUpdateService } from '../../services/users/UserUpdateService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { OptionalAuthContext } from '../../types';
 
 export async function updateUserHandler(c: OptionalAuthContext) {
@@ -13,7 +14,10 @@ export async function updateUserHandler(c: OptionalAuthContext) {
 
   if (!result.success) {
     const statusCode = result.code === 'USER_NOT_FOUND' ? 404 : 400;
-    return c.json({ error: result.error }, statusCode);
+    const errorCode = result.code === 'USER_NOT_FOUND' ? 
+      ErrorCodes.USER_NOT_FOUND : 
+      ErrorCodes.USER_UPDATE_FAILED;
+    return c.json({ error: result.error, errorCode }, statusCode);
   }
 
   return c.json({ 

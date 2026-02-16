@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 interface UpdateOrganizationDialogProps {
   open: boolean;
@@ -58,9 +60,8 @@ export function UpdateOrganizationDialog({
         description: description.trim() || undefined,
       });
       onSuccess();
-    } catch (err: any) {
-      console.error('Failed to update organization:', err);
-      setError(err.response?.data?.error || '組織の更新に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.ORGANIZATION_UPDATE_FAILED));
     } finally {
       setLoading(false);
     }

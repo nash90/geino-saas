@@ -8,6 +8,8 @@ import { AttachmentUpload } from "./AttachmentUpload";
 import { AttachmentList } from "./AttachmentList";
 import type { Attachment } from "@/types/entities";
 import { MESSAGES } from "@/constants/messages";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
 
 interface CommentInputProps {
   taskId: string;
@@ -49,8 +51,8 @@ export function CommentInput({
 
       toast.success(MESSAGES.COMMENT.COMMENT_ADDED_SUCCESS);
       onCommentAdded();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.COMMENT.COMMENT_ADD_FAILED);
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.COMMENT_ADD_FAILED);
     } finally {
       setSubmitting(false);
     }

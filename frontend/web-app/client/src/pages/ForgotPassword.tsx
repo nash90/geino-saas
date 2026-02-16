@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { authApi } from '@/api/auth';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -22,8 +24,8 @@ export default function ForgotPassword() {
     try {
       await authApi.resetPassword(email);
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'パスワードリセットに失敗しました。もう一度お試しください。');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.PASSWORD_RESET_REQUEST_FAILED));
     } finally {
       setLoading(false);
     }

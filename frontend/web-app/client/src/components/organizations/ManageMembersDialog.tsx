@@ -11,6 +11,8 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AddMemberSection } from './members/AddMemberSection';
 import { MembersTable } from './members/MembersTable';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 interface ManageMembersDialogProps {
   open: boolean;
@@ -37,9 +39,8 @@ export function ManageMembersDialog({ open, onClose, organization }: ManageMembe
       
       const orgData = await organizationsApi.get(organization.id);
       setMembers(orgData.organization.members);
-    } catch (err: any) {
-      console.error('Failed to load members:', err);
-      setError(err.response?.data?.error || 'データの読み込みに失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.MEMBER_LOAD_FAILED));
     } finally {
       setLoading(false);
     }
@@ -54,9 +55,8 @@ export function ManageMembersDialog({ open, onClose, organization }: ManageMembe
         organizationRoleCode: 1, // organization_manager
       });
       await loadMembers();
-    } catch (err: any) {
-      console.error('Failed to add member:', err);
-      setError(err.response?.data?.error || 'メンバーの追加に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.MEMBER_ADD_FAILED));
       throw err;
     } finally {
       setActionLoading(false);
@@ -73,9 +73,8 @@ export function ManageMembersDialog({ open, onClose, organization }: ManageMembe
       setError('');
       await organizationsApi.removeMember(organization.id, userId);
       await loadMembers();
-    } catch (err: any) {
-      console.error('Failed to remove member:', err);
-      setError(err.response?.data?.error || 'メンバーの削除に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.MEMBER_REMOVE_FAILED));
     } finally {
       setActionLoading(false);
     }

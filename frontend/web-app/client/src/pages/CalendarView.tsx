@@ -10,6 +10,8 @@ import type { TaskWithDetails, ProjectWithMembers } from "@/types/entities";
 import { TaskStatus } from "@/types/entities";
 import { CalendarGrid, CalendarTaskList, TaskDetailDialog } from "@/components/tasks";
 import { ProjectMultiSelect } from "@/components/ProjectMultiSelect";
+import { handleApiError } from "@/lib/errorHandler";
+import { OPERATION_ERROR_MESSAGES } from "@/constants/errorMessages";
 
 interface CalendarTask {
   date: string;
@@ -123,8 +125,8 @@ export default function CalendarView() {
       });
 
       setCalendarTasks(response.calendarTasks);
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to load calendar tasks");
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.CALENDAR_LOAD_FAILED);
     } finally {
       setLoading(false);
     }
@@ -215,8 +217,8 @@ export default function CalendarView() {
         const projectResponse = await projectsApi.get(taskWithComments.projectId);
         setCurrentProjectDetails(projectResponse.project);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to load task details");
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.TASK_LOAD_FAILED);
     } finally {
       setLoadingTaskDetails(false);
     }

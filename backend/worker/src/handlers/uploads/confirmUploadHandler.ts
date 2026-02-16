@@ -1,4 +1,5 @@
 import { FileUploadService } from '../../services/uploads/FileUploadService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function confirmUploadHandler(c: AuthContext) {
@@ -12,7 +13,10 @@ export async function confirmUploadHandler(c: AuthContext) {
 
   // Validate required fields
   if (!uploadId || !fileKey || !fileName || !fileSize || !mimeType) {
-    return c.json({ error: 'uploadId, fileKey, fileName, fileSize, and mimeType are required' }, 400);
+    return c.json({ 
+      error: 'uploadId, fileKey, fileName, fileSize, and mimeType are required',
+      errorCode: ErrorCodes.MISSING_REQUIRED_FIELD
+    }, 400);
   }
 
   // Call service layer
@@ -29,7 +33,8 @@ export async function confirmUploadHandler(c: AuthContext) {
 
   if (!result.success) {
     const statusCode = result.code === 'NOT_FOUND' ? 404 : 500;
-    return c.json({ error: result.error }, statusCode);
+    const errorCode = result.code === 'NOT_FOUND' ? ErrorCodes.TASK_NOT_FOUND : ErrorCodes.FILE_UPLOAD_FAILED;
+    return c.json({ error: result.error, errorCode }, statusCode);
   }
 
   return c.json({

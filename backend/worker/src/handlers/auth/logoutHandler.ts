@@ -1,6 +1,7 @@
 import { deleteCookie } from 'hono/cookie';
 import { createClient } from '@supabase/supabase-js';
 import { authenticate } from '../../middleware/auth';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { OptionalAuthContext } from '../../types';
 
 export async function logoutHandler(c: OptionalAuthContext) {
@@ -21,6 +22,9 @@ export async function logoutHandler(c: OptionalAuthContext) {
     return c.json({ message: 'Logged out successfully' });
   } catch (error) {
     console.error('[Logout Error]', error);
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ 
+      error: 'Unauthorized',
+      errorCode: ErrorCodes.UNAUTHORIZED
+    }, 401);
   }
 }

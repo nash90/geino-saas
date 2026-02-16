@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { TaskDetailDialog } from '@/components/tasks';
 import type { ProjectWithMembers, TaskWithComments } from '@/types/entities';
 import { usePermissions } from '@/hooks/usePermissions';
+import { handleApiError } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function TaskDetail() {
   const params = useParams();
@@ -42,9 +44,8 @@ export default function TaskDetail() {
 
       // Open dialog after loading
       setIsDialogOpen(true);
-    } catch (error: any) {
-      console.error('Failed to load task:', error);
-      toast.error('タスクの読み込みに失敗しました');
+    } catch (error) {
+      handleApiError(error, OPERATION_ERROR_MESSAGES.TASK_LOAD_FAILED);
     } finally {
       setLoading(false);
     }

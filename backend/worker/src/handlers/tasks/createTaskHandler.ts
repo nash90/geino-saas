@@ -2,6 +2,7 @@ import { TaskCommandService } from '../../services/tasks/TaskCommandService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import { DateValidationService } from '../../services/validation/DateValidationService';
 import type { AuthContext } from '../../types';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function createTaskHandler(c: AuthContext) {
   const db = c.get('db');
@@ -28,7 +29,10 @@ export async function createTaskHandler(c: AuthContext) {
   const hasAccess = await AuthorizationService.canCreateTask(db, user, projectId, statusCode);
 
   if (!hasAccess) {
-    return c.json({ error: 'Forbidden: You do not have permission to create tasks in this project' }, 403);
+    return c.json({ 
+      error: 'Forbidden: You do not have permission to create tasks in this project',
+      errorCode: ErrorCodes.NO_TASK_CREATE 
+    }, 403);
   }
 
   // Get user's project role for validation

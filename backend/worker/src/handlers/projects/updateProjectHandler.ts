@@ -2,6 +2,7 @@ import { ProjectCommandService } from '../../services/projects/ProjectCommandSer
 import { ProjectQueryService } from '../../services/projects/ProjectQueryService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
 import type { AuthContext } from '../../types';
+import { ErrorCodes } from '../../constants/errorCodes';
 
 export async function updateProjectHandler(c: AuthContext) {
   const db = c.get('db');
@@ -16,7 +17,10 @@ export async function updateProjectHandler(c: AuthContext) {
   const hasAccess = await AuthorizationService.isProjectManagerOrAbove(db, user, projectId);
 
   if (!hasAccess) {
-    return c.json({ error: 'Forbidden: You do not have permission to update this project' }, 403);
+    return c.json({ 
+      error: 'Forbidden: You do not have permission to update this project',
+      errorCode: ErrorCodes.NO_PROJECT_UPDATE 
+    }, 403);
   }
 
   // Parse request body

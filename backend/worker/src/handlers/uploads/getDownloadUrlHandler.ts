@@ -1,5 +1,6 @@
 import { FileUploadService } from '../../services/uploads/FileUploadService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function getDownloadUrlHandler(c: AuthContext) {
@@ -14,7 +15,8 @@ export async function getDownloadUrlHandler(c: AuthContext) {
   const contextResult = await fileUploadService.getAttachmentWithTaskContext(attachmentId);
   if (!contextResult.success) {
     const statusCode = contextResult.code === 'NOT_FOUND' ? 404 : 500;
-    return c.json({ error: contextResult.error }, statusCode);
+    const errorCode = contextResult.code === 'NOT_FOUND' ? ErrorCodes.ATTACHMENT_NOT_FOUND : undefined;
+    return c.json({ error: contextResult.error, errorCode }, statusCode);
   }
 
   const { attachment, task } = contextResult.data!;
@@ -22,14 +24,20 @@ export async function getDownloadUrlHandler(c: AuthContext) {
   // Verify user has access to view tasks in this project
   const canAccess = await AuthorizationService.canViewTask(db, user, task.projectId);
   if (!canAccess) {
-    return c.json({ error: 'You do not have access to this attachment' }, 403);
+    return c.json({ 
+      error: 'You do not have access to this attachment',
+      errorCode: ErrorCodes.NO_ATTACHMENT_ACCESS
+    }, 403);
   }
 
   // Call service layer to generate URL
   const result = await fileUploadService.generateDownloadUrl(attachment.fileUrl);
 
   if (!result.success) {
-    return c.json({ error: result.error }, 500);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.ATTACHMENT_DOWNLOAD_FAILED
+    }, 500);
   }
 
   return c.json(result.data);

@@ -30,6 +30,7 @@ import { FilePreview } from "./FilePreview";
 import { useAuth } from "@/contexts/AuthContext";
 import { validateDateTimeInput, validateDeadlineValue } from "@/lib/validation/dateValidation";
 import { MESSAGES } from "@/constants/messages";
+import { handleApiError } from "@/lib/errorHandler";
 
 interface TaskDetailDialogProps {
   task: TaskWithComments | null;
@@ -82,9 +83,9 @@ export function TaskDetailDialog({
     try {
       const response = await tasksApi.listComments(task.id);
       setComments(response.comments || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to fetch comments:", error);
-      toast.error(MESSAGES.COMMENT.COMMENT_LOAD_FAILED);
+      handleApiError(error, MESSAGES.COMMENT.COMMENT_LOAD_FAILED);
     } finally {
       setLoadingComments(false);
     }
@@ -145,8 +146,8 @@ export function TaskDetailDialog({
       toast.success(MESSAGES.TASK.TASK_UPDATED_SUCCESS);
       setIsEditMode(false);
       onTaskUpdated();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.TASK.TASK_UPDATE_FAILED);
+    } catch (error) {
+      handleApiError(error, MESSAGES.TASK.TASK_UPDATE_FAILED);
     } finally {
       setLoading(false);
     }
@@ -172,8 +173,8 @@ export function TaskDetailDialog({
       toast.success(MESSAGES.TASK.TASK_DUPLICATED_SUCCESS);
       onTaskUpdated();
       onClose();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || MESSAGES.TASK.TASK_DUPLICATE_FAILED);
+    } catch (error) {
+      handleApiError(error, MESSAGES.TASK.TASK_DUPLICATE_FAILED);
     } finally {
       setLoading(false);
     }
@@ -343,8 +344,8 @@ export function TaskDetailDialog({
                     await uploadsApi.deleteAttachment(attachmentId);
                     toast.success(MESSAGES.FILE.FILE_DELETED_SUCCESS);
                     onTaskUpdated();
-                  } catch (error: any) {
-                    toast.error(error.response?.data?.error || MESSAGES.FILE.FILE_DELETE_FAILED);
+                  } catch (error) {
+                    handleApiError(error, MESSAGES.FILE.FILE_DELETE_FAILED);
                   }
                 }}
                 canDelete={canEdit}

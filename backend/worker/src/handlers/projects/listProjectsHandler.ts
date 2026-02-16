@@ -1,4 +1,5 @@
 import { ProjectQueryService } from '../../services/projects/ProjectQueryService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function listProjectsHandler(c: AuthContext) {
@@ -26,7 +27,10 @@ export async function listProjectsHandler(c: AuthContext) {
   profiler.checkpoint('listProjects query');
 
   if (!result.success) {
-    return c.json({ error: result.error }, 500);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.PROJECT_UPDATE_FAILED
+    }, 500);
   }
 
   return c.json({

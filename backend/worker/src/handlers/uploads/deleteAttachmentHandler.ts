@@ -1,5 +1,6 @@
 import { FileUploadService } from '../../services/uploads/FileUploadService';
 import { AuthorizationService } from '../../services/auth/AuthorizationService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { AuthContext } from '../../types';
 
 export async function deleteAttachmentHandler(c: AuthContext) {
@@ -14,7 +15,8 @@ export async function deleteAttachmentHandler(c: AuthContext) {
   const contextResult = await fileUploadService.getAttachmentWithTaskContext(attachmentId);
   if (!contextResult.success) {
     const statusCode = contextResult.code === 'NOT_FOUND' ? 404 : 500;
-    return c.json({ error: contextResult.error }, statusCode);
+    const errorCode = contextResult.code === 'NOT_FOUND' ? ErrorCodes.ATTACHMENT_NOT_FOUND : undefined;
+    return c.json({ error: contextResult.error, errorCode }, statusCode);
   }
 
   const { attachment, task } = contextResult.data!;
@@ -26,7 +28,10 @@ export async function deleteAttachmentHandler(c: AuthContext) {
     // Check if user can edit tasks (PM or above)
     const canEdit = await AuthorizationService.canEditTask(db, user, task as any);
     if (!canEdit) {
-      return c.json({ error: 'Only the uploader or Project Managers can delete attachments' }, 403);
+      return c.json({ 
+        error: 'Only the uploader or Project Managers can delete attachments',
+        errorCode: ErrorCodes.NO_ATTACHMENT_DELETE
+      }, 403);
     }
   }
 
@@ -34,7 +39,10 @@ export async function deleteAttachmentHandler(c: AuthContext) {
   const result = await fileUploadService.deleteAttachment(attachmentId);
 
   if (!result.success) {
-    return c.json({ error: result.error }, 500);
+    return c.json({ 
+      error: result.error,
+      errorCode: ErrorCodes.ATTACHMENT_DELETE_FAILED
+    }, 500);
   }
 
   return c.json({ message: 'Attachment deleted successfully' });

@@ -15,6 +15,8 @@ import { UsersTable } from '@/components/admin/UsersTable';
 import { PaginationControls } from '@/components/admin/PaginationControls';
 import { RoleChangeDialog } from '@/components/admin/RoleChangeDialog';
 import { DeleteUserDialog } from '@/components/admin/DeleteUserDialog';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 export default function SystemAdmin() {
   const [users, setUsers] = useState<User[]>([]);
@@ -60,7 +62,8 @@ export default function SystemAdmin() {
       setTotalUsers(data.pagination.total);
     } catch (err: any) {
       console.error('Failed to load users:', err);
-      setError(err.message || 'ユーザー一覧の取得に失敗しました');
+      const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_LIST_LOAD_FAILED);
+      setError(errorMessage);
     } finally {
       setLoading(false);
       setTableLoading(false);
@@ -98,7 +101,8 @@ export default function SystemAdmin() {
       setNewRoleCode('');
     } catch (err: any) {
       console.error('Failed to update role:', err);
-      setError(err.message || 'ロールの更新に失敗しました');
+      const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_UPDATE_FAILED);
+      setError(errorMessage);
     } finally {
       setActionLoading(false);
     }
@@ -119,7 +123,8 @@ export default function SystemAdmin() {
       setSelectedUser(null);
     } catch (err: any) {
       console.error('Failed to delete user:', err);
-      setError(err.message || 'ユーザーの削除に失敗しました');
+      const errorMessage = getErrorMessage(err, 'ユーザーの削除に失敗しました');
+      setError(errorMessage);
     } finally {
       setActionLoading(false);
     }

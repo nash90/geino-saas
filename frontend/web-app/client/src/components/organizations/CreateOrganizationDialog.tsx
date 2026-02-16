@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { getErrorMessage } from '@/lib/errorHandler';
+import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
 interface CreateOrganizationDialogProps {
   open: boolean;
@@ -48,9 +50,8 @@ export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrg
       setLoadingUsers(true);
       const data = await usersApi.list({ page: 1, limit: 100 });
       setUsers(data.users);
-    } catch (err: any) {
-      console.error('Failed to load users:', err);
-      setError('ユーザー一覧の取得に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_LIST_LOAD_FAILED));
     } finally {
       setLoadingUsers(false);
     }
@@ -78,9 +79,8 @@ export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrg
         managerIds: selectedManagers,
       });
       onSuccess();
-    } catch (err: any) {
-      console.error('Failed to create organization:', err);
-      setError(err.response?.data?.error || '組織の作成に失敗しました');
+    } catch (err) {
+      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.ORGANIZATION_CREATE_FAILED));
     } finally {
       setLoading(false);
     }

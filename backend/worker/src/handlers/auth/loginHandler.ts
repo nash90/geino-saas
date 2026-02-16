@@ -1,5 +1,6 @@
 import { setCookie } from 'hono/cookie';
 import { LoginService } from '../../services/auth/LoginService';
+import { ErrorCodes } from '../../constants/errorCodes';
 import type { BaseContext } from '../../types';
 
 export async function loginHandler(c: BaseContext) {
@@ -13,7 +14,10 @@ export async function loginHandler(c: BaseContext) {
 
   if (!result.success) {
     const statusCode = result.code === 'INVALID_CREDENTIALS' ? 401 : 400;
-    return c.json({ error: result.error }, statusCode);
+    const errorCode = result.code === 'INVALID_CREDENTIALS' ? 
+      ErrorCodes.INVALID_CREDENTIALS : 
+      ErrorCodes.LOGIN_FAILED;
+    return c.json({ error: result.error, errorCode }, statusCode);
   }
 
   const { user, accessToken, refreshToken } = result.data!;
