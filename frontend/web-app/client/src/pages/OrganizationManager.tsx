@@ -13,21 +13,38 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Pencil } from 'lucide-react';
+import { Loader2, Pencil, ShieldAlert } from 'lucide-react';
 import { UpdateOrganizationDialog } from '@/components/organizations/UpdateOrganizationDialog';
 import { getErrorMessage } from '@/lib/errorHandler';
 import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'wouter';
 
 export default function OrganizationManager() {
+  const { user, organizations: userOrganizations, loading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
+  const isSystemAdmin = user?.systemRoleCode === 1;
+  const isOrganizationManager = userOrganizations.length > 0;
+  const hasAccess = isSystemAdmin || isOrganizationManager;
+
+  // Redirect users without access to home page
   useEffect(() => {
-    loadOrganizations();
-  }, []);
+    if (!authLoading && !hasAccess) {
+      setLocation('/');
+    }
+  }, [authLoading, hasAccess, setLocation]);
+
+  useEffect(() => {
+    if (hasAccess) {
+      loadOrganizations();
+    }
+  }, [hasAccess]);
 
   const loadOrganizations = async () => {
     try {
@@ -54,12 +71,26 @@ export default function OrganizationManager() {
     loadOrganizations();
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not authorized (brief flash before redirect)
+  if (!hasAccess) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertDescription>
+            この操作には組織マネージャー権限が必要です。ホームページにリダイレクトしています...
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
