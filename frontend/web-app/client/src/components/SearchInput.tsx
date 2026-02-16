@@ -44,8 +44,11 @@ export function SearchInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && onSearch) {
-      onSearch(internalValue);
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission when used inside forms
+      if (onSearch) {
+        onSearch(internalValue);
+      }
     }
   };
 
