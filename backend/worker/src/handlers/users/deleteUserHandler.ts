@@ -1,6 +1,6 @@
 import { UserDeleteService } from '../../services/users/UserDeleteService';
 import { ErrorCodes } from '../../constants/errorCodes';
-import type { OptionalAuthContext} from '../../types';
+import type { OptionalAuthContext } from '../../types';
 
 export async function deleteUserHandler(c: OptionalAuthContext) {
   const id = c.req.param('id');
