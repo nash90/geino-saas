@@ -1,149 +1,45 @@
-import { useEffect, useState } from 'react';
-import { usersApi, type User } from '@/api/users';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UsersManagementTab } from '@/components/admin/tabs/UsersManagementTab';
+import { OrganizationsManagementTab } from '@/components/admin/tabs/OrganizationsManagementTab';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'wouter';
+import { useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { SearchInput } from '@/components/SearchInput';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
-import { UsersTable } from '@/components/admin/UsersTable';
-import { PaginationControls } from '@/components/admin/PaginationControls';
-import { RoleChangeDialog } from '@/components/admin/RoleChangeDialog';
-import { DeleteUserDialog } from '@/components/admin/DeleteUserDialog';
-import { getErrorMessage } from '@/lib/errorHandler';
-import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { ShieldAlert } from 'lucide-react';
 
 export default function SystemAdmin() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tableLoading, setTableLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [newRoleCode, setNewRoleCode] = useState('');
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+  const isSystemAdmin = user?.systemRoleCode === 1;
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
-
+  // Redirect non-system-admins to home page
   useEffect(() => {
-    loadUsers();
-  }, [currentPage, pageSize, activeSearch]);
-
-  const loadUsers = async () => {
-    try {
-      // Show full page loading only on initial load, table loading for search/pagination
-      if (users.length === 0 && !activeSearch) {
-        setLoading(true);
-      } else {
-        setTableLoading(true);
-      }
-      setError('');
-      const data = await usersApi.list({ 
-        page: currentPage, 
-        limit: pageSize,
-        search: activeSearch || undefined 
-      });
-      setUsers(data.users);
-      setTotalPages(data.pagination.totalPages);
-      setTotalUsers(data.pagination.total);
-    } catch (err) {
-      const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_LIST_LOAD_FAILED);
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-      setTableLoading(false);
+    if (!loading && !isSystemAdmin) {
+      setLocation('/');
     }
-  };
+  }, [loading, isSystemAdmin, setLocation]);
 
-  const handleSearch = (value: string) => {
-    setActiveSearch(value);
-    setCurrentPage(1);
-  };
-
-  const handlePageSizeChange = (value: string) => {
-    setPageSize(parseInt(value));
-    setCurrentPage(1);
-  };
-
-  const handleRoleChange = async () => {
-    if (!selectedUser) return;
-
-    try {
-      setActionLoading(true);
-      setError('');
-      const roleCode = newRoleCode === 'null' ? null : parseInt(newRoleCode);
-      await usersApi.update(selectedUser.id, { systemRoleCode: roleCode });
-      
-      // Update local state
-      setUsers(users.map(u => 
-        u.id === selectedUser.id 
-          ? { ...u, systemRoleCode: roleCode }
-          : u
-      ));
-      
-      setIsRoleDialogOpen(false);
-      setSelectedUser(null);
-      setNewRoleCode('');
-    } catch (err) {
-      const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_UPDATE_FAILED);
-      setError(errorMessage);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteUser = async () => {
-    if (!selectedUser) return;
-
-    try {
-      setActionLoading(true);
-      setError('');
-      await usersApi.delete(selectedUser.id);
-      
-      // Remove from local state
-      setUsers(users.filter(u => u.id !== selectedUser.id));
-      
-      setIsDeleteDialogOpen(false);
-      setSelectedUser(null);
-    } catch (err) {
-      const errorMessage = getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_DELETE_FAILED);
-      setError(errorMessage);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const openRoleDialog = (user: User) => {
-    setSelectedUser(user);
-    setNewRoleCode(user.systemRoleCode === null ? 'null' : user.systemRoleCode.toString());
-    setIsRoleDialogOpen(true);
-  };
-
-  const openDeleteDialog = (user: User) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  };
-
+  // Show loading state
   if (loading) {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not system admin (brief flash before redirect)
+  if (!isSystemAdmin) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertDescription>
+            この操作にはシステム管理者権限が必要です。ホームページにリダイレクトしています...
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -153,82 +49,24 @@ export default function SystemAdmin() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">システム管理</h1>
-        <p className="text-gray-600 mt-1">ユーザーアカウントとシステムロールを管理します</p>
+        <p className="text-gray-600 mt-1">ユーザーアカウント、システムロール、組織を管理します</p>
       </div>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {/* Users Table */}
-      <Card>
-        <CardHeader className="space-y-4">
-          <div className="flex flex-row items-center justify-between">
-            <CardTitle>ユーザー一覧 (全{totalUsers}人)</CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">表示件数:</span>
-              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <SearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={handleSearch}
-            placeholder="名前、メールアドレスで検索..."
-          />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <UsersTable
-            users={users}
-            loading={tableLoading}
-            pageSize={pageSize}
-            activeSearch={activeSearch}
-            onRoleClick={openRoleDialog}
-            onDeleteClick={openDeleteDialog}
-          />
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={totalUsers}
-            loading={tableLoading}
-            onPageChange={setCurrentPage}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Role Change Dialog */}
-      <RoleChangeDialog
-        open={isRoleDialogOpen}
-        user={selectedUser}
-        newRoleCode={newRoleCode}
-        loading={actionLoading}
-        onOpenChange={setIsRoleDialogOpen}
-        onRoleCodeChange={setNewRoleCode}
-        onConfirm={handleRoleChange}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteUserDialog
-        open={isDeleteDialogOpen}
-        user={selectedUser}
-        loading={actionLoading}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDeleteUser}
-      />
+      {/* Tabs */}
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList>
+          <TabsTrigger value="users">ユーザー一覧</TabsTrigger>
+          <TabsTrigger value="organizations">組織一覧</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users" className="mt-6">
+          <UsersManagementTab />
+        </TabsContent>
+        
+        <TabsContent value="organizations" className="mt-6">
+          <OrganizationsManagementTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

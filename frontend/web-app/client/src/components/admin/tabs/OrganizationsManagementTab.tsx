@@ -4,7 +4,6 @@ import type { Organization } from '@/types/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/date-utils';
 import {
   Table,
@@ -29,10 +28,7 @@ import {
 import { getErrorMessage } from '@/lib/errorHandler';
 import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
 
-export default function OrganizationsList() {
-  const { user } = useAuth();
-  const isSystemAdmin = user?.systemRoleCode === 1;
-  
+export function OrganizationsManagementTab() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -118,15 +114,15 @@ export default function OrganizationsList() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">組織管理</h1>
-        {isSystemAdmin && (
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            組織作成
-          </Button>
-        )}
+        <div>
+          <p className="text-gray-600">組織の作成、編集、削除、組織マネージャー管理ができます</p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          組織作成
+        </Button>
       </div>
 
       {error && (
@@ -137,7 +133,7 @@ export default function OrganizationsList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>組織一覧</CardTitle>
+          <CardTitle>組織一覧 (全{totalOrgs}件)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -169,16 +165,14 @@ export default function OrganizationsList() {
                       <TableCell>{formatDate(org.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {isSystemAdmin && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openMembersDialog(org)}
-                            >
-                              <Users className="h-4 w-4 mr-1" />
-                              メンバー
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openMembersDialog(org)}
+                          >
+                            <Users className="h-4 w-4 mr-1" />
+                            マネージャー
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -187,16 +181,14 @@ export default function OrganizationsList() {
                             <Pencil className="h-4 w-4 mr-1" />
                             編集
                           </Button>
-                          {isSystemAdmin && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => openDeleteDialog(org)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              削除
-                            </Button>
-                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openDeleteDialog(org)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            削除
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -255,6 +247,7 @@ export default function OrganizationsList() {
             }}
             organization={selectedOrg}
             onSuccess={handleUpdateSuccess}
+            isSystemAdmin={true}
           />
 
           <ManageMembersDialog

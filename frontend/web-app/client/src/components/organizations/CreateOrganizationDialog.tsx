@@ -14,10 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, X } from 'lucide-react';
+import { SearchInput } from '@/components/SearchInput';
+import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errorHandler';
 import { OPERATION_ERROR_MESSAGES } from '@/constants/errorMessages';
+import { MESSAGES } from '@/constants/messages';
 
 interface CreateOrganizationDialogProps {
   open: boolean;
@@ -28,33 +30,65 @@ interface CreateOrganizationDialogProps {
 export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrganizationDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedManagers, setSelectedManagers] = useState<string[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [selectedManagers, setSelectedManagers] = useState<User[]>([]);
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (open) {
-      loadUsers();
       // Reset form
       setName('');
       setDescription('');
       setSelectedManagers([]);
+      setSearchQuery('');
+      setSearchResults([]);
       setError('');
     }
   }, [open]);
 
-  const loadUsers = async () => {
-    try {
-      setLoadingUsers(true);
-      const data = await usersApi.list({ page: 1, limit: 100 });
-      setUsers(data.users);
-    } catch (err) {
-      setError(getErrorMessage(err, OPERATION_ERROR_MESSAGES.USER_LIST_LOAD_FAILED));
-    } finally {
-      setLoadingUsers(false);
+  const handleUserSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
     }
+
+    try {
+      setSearchLoading(true);
+      setSearchResults([]);
+
+      // Use exact email search for security
+      const result = await usersApi.findByEmail(query.trim());
+
+      if (result.user) {
+        // Check if user is already selected
+        const isAlreadySelected = selectedManagers.some(manager => manager.id === result.user!.id);
+        if (isAlreadySelected) {
+          toast.info(MESSAGES.MEMBER.USER_ALREADY_SELECTED);
+        } else {
+          setSearchResults([result.user]);
+        }
+      } else {
+        toast.info(MESSAGES.MEMBER.USER_NOT_FOUND);
+      }
+    } catch (err) {
+      console.error('Failed to search user:', err);
+      toast.error(MESSAGES.MEMBER.USER_SEARCH_FAILED);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSelectUser = (user: User) => {
+    setSelectedManagers(prev => [...prev, user]);
+    setSearchResults([]);
+    setSearchQuery('');
+  };
+
+  const handleRemoveManager = (userId: string) => {
+    setSelectedManagers(prev => prev.filter(u => u.id !== userId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +110,7 @@ export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrg
       await organizationsApi.create({
         name: name.trim(),
         description: description.trim() || undefined,
-        managerIds: selectedManagers,
+        managerIds: selectedManagers.map(m => m.id),
       });
       onSuccess();
     } catch (err) {
@@ -84,14 +118,6 @@ export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrg
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleManager = (userId: string) => {
-    setSelectedManagers(prev =>
-      prev.includes(userId)
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
   };
 
   return (
@@ -137,42 +163,77 @@ export function CreateOrganizationDialog({ open, onClose, onSuccess }: CreateOrg
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>
                 組織マネージャー <span className="text-red-500">*</span>
               </Label>
-              {loadingUsers ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                </div>
-              ) : (
-                <div className="border rounded-md p-4 max-h-48 overflow-y-auto space-y-2">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`manager-${user.id}`}
-                        checked={selectedManagers.includes(user.id)}
-                        onCheckedChange={() => toggleManager(user.id)}
-                        disabled={loading}
-                      />
-                      <label
-                        htmlFor={`manager-${user.id}`}
-                        className="text-sm cursor-pointer flex-1"
-                      >
-                        {user.lastname} {user.firstname} ({user.email})
-                      </label>
-                    </div>
-                  ))}
-                  {users.length === 0 && (
-                    <div className="text-sm text-gray-500 text-center py-2">
-                      ユーザーが見つかりません
-                    </div>
-                  )}
+
+              {/* Selected Managers */}
+              {selectedManagers.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">選択中: {selectedManagers.length}人</p>
+                  <div className="border rounded-md divide-y max-h-40 overflow-y-auto">
+                    {selectedManagers.map((manager) => (
+                      <div key={manager.id} className="flex items-center justify-between p-3 bg-gray-50">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {manager.lastname} {manager.firstname}
+                          </p>
+                          <p className="text-sm text-gray-600">{manager.email}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveManager(manager.id)}
+                          disabled={loading}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              <p className="text-sm text-gray-500">
-                選択中: {selectedManagers.length}人
-              </p>
+
+              {/* User Search */}
+              <div className="space-y-2">
+                <SearchInput
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  onSearch={handleUserSearch}
+                  placeholder={MESSAGES.MEMBER.SEARCH_PLACEHOLDER_EMAIL_SHORT}
+                  disabled={loading}
+                />
+                <p className="text-xs text-gray-500">
+                  {MESSAGES.MEMBER.SEARCH_HELP_TEXT}
+                </p>
+                
+                {/* Search Results */}
+                {searchLoading && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  </div>
+                )}
+                
+                {!searchLoading && searchResults.length > 0 && (
+                  <div className="border rounded-md divide-y max-h-60 overflow-y-auto">
+                    {searchResults.map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => handleSelectUser(user)}
+                        className="w-full p-3 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <p className="font-medium text-sm">
+                          {user.lastname} {user.firstname}
+                        </p>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

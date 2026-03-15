@@ -14,7 +14,7 @@ import TasksProgress from "./pages/TasksProgress";
 import TaskBoard from "./pages/TaskBoard";
 import TaskDetail from "./pages/TaskDetail";
 import SystemAdmin from "./pages/SystemAdmin";
-import OrganizationsList from "./pages/admin/OrganizationsList";
+import OrganizationManager from "./pages/OrganizationManager";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -117,10 +117,10 @@ function Router() {
               </DashboardLayout>
             )}
           </Route>
-          <Route path="/admin/organizations">
+          <Route path="/organization-manager">
             {() => (
               <DashboardLayout>
-                <OrganizationsList />
+                <OrganizationManager />
               </DashboardLayout>
             )}
           </Route>
